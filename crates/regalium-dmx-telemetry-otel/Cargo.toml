@@ -1,0 +1,18 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "regalium-dmx-telemetry-otel"
+description = "Binds the Regalium DMX telemetry seam to the the-protobuf-project telemetry SDK and OpenTelemetry."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+regalium-dmx-telemetry.workspace = true
+
+[lints]
+workspace = true

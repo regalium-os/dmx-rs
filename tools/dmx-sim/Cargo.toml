@@ -1,0 +1,28 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "regalium-dmx-sim"
+description = "Simulate an Art-Net and sACN rig: nodes, universes and RDM fixtures, for testing without hardware."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[lib]
+name = "dmx_sim"
+
+[[bin]]
+name = "dmx-sim"
+path = "src/bin/dmx-sim/main.rs"
+
+[dependencies]
+regalium-dmx.workspace = true
+regalium-dmx-telemetry-otel.workspace = true
+regalium-dmx-schema.workspace = true
+
+[lints]
+workspace = true

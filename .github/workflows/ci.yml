@@ -1,0 +1,110 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# Jobs are independent on purpose. A red lint should not hide a red gate, and
+# a reviewer reading a failed run should see everything that is wrong in one
+# pass rather than one problem per push.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  conformance:
+    name: Conformance gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: extractions/setup-just@v4
+      - uses: Swatinem/rust-cache@v2
+      # The gates over this repository, then the negative tests that prove
+      # each gate fails when it should. Both halves matter: a gate tested only
+      # against a correct tree reports success when it works and when it does
+      # nothing, and those are not the same thing.
+      - run: just gates
+      - run: cargo test -p xtask
+
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --workspace
+      - run: cargo test --workspace --all-targets
+
+  fixtures:
+    name: Fixture corpora
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: extractions/setup-just@v4
+      - uses: Swatinem/rust-cache@v2
+      - run: just fixtures
+
+  lint:
+    name: Format and clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  deny:
+    name: Licences and advisories
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: EmbarkStudios/cargo-deny-action@v2
+
+  cross:
+    name: Cross-compile
+    runs-on: ubuntu-latest
+    # Lighting nodes are ARM. Pure Rust is what makes each of these one flag
+    # rather than a cross-compilation project, and the deps gate is what keeps
+    # it true by refusing anything that needs a C toolchain. Building here is
+    # the second opinion: a target that fails to link says the gate missed
+    # something no amount of reading manifests would have revealed.
+    #
+    # The driver is checked with no C toolchain installed at all. Only then
+    # are the cross compilers installed, for the crates the deps gate lets
+    # carry the telemetry SDK's audited zstd/lz4 — the otel
+    # adapter, the probe, the simulator and the server, xtask deps's
+    # NATIVE_PERMITTED. The order is the proof that the exception stays where
+    # it is. A warm cache can hide a C build in the first step, since it holds
+    # what the second compiled; a cold one is what shows it.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: armv7-unknown-linux-gnueabihf, cc: gcc-arm-linux-gnueabihf }
+          - { target: aarch64-unknown-linux-gnu, cc: gcc-aarch64-linux-gnu }
+          - { target: x86_64-unknown-linux-gnu, cc: gcc }
+          - { target: x86_64-pc-windows-gnu, cc: gcc-mingw-w64-x86-64 }
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup target add ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - name: The driver, with no C toolchain
+        run: >
+          cargo check --workspace --target ${{ matrix.target }}
+          --exclude regalium-dmx-probe --exclude regalium-dmx-telemetry-otel
+          --exclude regalium-dmx-sim --exclude regalium-dmx-server
+      - run: sudo apt-get update && sudo apt-get install -y ${{ matrix.cc }}
+      - name: The adapter, the probe, the simulator and the server, with the audited C libraries
+        run: >
+          cargo check --target ${{ matrix.target }}
+          -p regalium-dmx-probe -p regalium-dmx-telemetry-otel
+          -p regalium-dmx-sim -p regalium-dmx-server

@@ -1,0 +1,18 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "regalium-dmx-core"
+description = "Pure DMX512 and RDM protocol core: slots, universes, merging, the RDM codec and the controller state machine."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+regalium-dmx-telemetry.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,74 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# The workspace is the layering. Each crate in the table below may depend only
+# on the crates named in CLAUDE.md, and `cargo xtask arch` reads the resolved
+# dependency graph to prove it. A module boundary is a convention; a crate
+# boundary is a fact the compiler already knows.
+#
+# The shape is bacnet-rs's, deliberately: the seam, the adapter, the schema,
+# the runtime, the facade and the three applications are the same crates
+# under a DMX name. Only the protocol layer differs -- the core (DMX512 and
+# RDM) and the three transports DMX actually travels over.
+[workspace]
+resolver = "3"
+members = [
+    "crates/regalium-dmx",
+    "crates/regalium-dmx-artnet",
+    "crates/regalium-dmx-core",
+    "crates/regalium-dmx-runtime",
+    "crates/regalium-dmx-sacn",
+    "crates/regalium-dmx-schema",
+    "crates/regalium-dmx-serial",
+    "crates/regalium-dmx-telemetry",
+    "crates/regalium-dmx-telemetry-otel",
+    "tools/dmx-probe",
+    "tools/dmx-server",
+    "tools/dmx-sim",
+    "xtask",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.91"
+license = "Apache-2.0"
+repository = "https://github.com/regalium-os/dmx-rs"
+authors = ["RegaliumOS"]
+
+[workspace.dependencies]
+regalium-dmx = { path = "crates/regalium-dmx", version = "0.1.0" }
+regalium-dmx-artnet = { path = "crates/regalium-dmx-artnet", version = "0.1.0" }
+regalium-dmx-core = { path = "crates/regalium-dmx-core", version = "0.1.0" }
+regalium-dmx-runtime = { path = "crates/regalium-dmx-runtime", version = "0.1.0" }
+regalium-dmx-sacn = { path = "crates/regalium-dmx-sacn", version = "0.1.0" }
+regalium-dmx-schema = { path = "crates/regalium-dmx-schema", version = "0.1.0" }
+regalium-dmx-serial = { path = "crates/regalium-dmx-serial", version = "0.1.0" }
+regalium-dmx-telemetry = { path = "crates/regalium-dmx-telemetry", version = "0.1.0" }
+regalium-dmx-telemetry-otel = { path = "crates/regalium-dmx-telemetry-otel", version = "0.1.0" }
+# Applications, not published: the server drives the probe's engine.
+regalium-dmx-probe = { path = "tools/dmx-probe", version = "0.1.0" }
+regalium-dmx-sim = { path = "tools/dmx-sim", version = "0.1.0" }
+
+# Lints are declared once and inherited with `[lints] workspace = true`, so a
+# new crate cannot quietly opt out of them.
+[workspace.lints.rust]
+# Forbid, not deny: an inner attribute cannot lift it. A codec parsing hostile
+# bytes off a show network has no business reaching for unsafe.
+unsafe_code = "forbid"
+missing_docs = "warn"
+unreachable_pub = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# Never panic: a node that aborts on a bad Art-Net length blacks out the
+# stage. These are warnings that CI escalates with -D warnings.
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+indexing_slicing = "warn"
+# Module names repeat the crate name on purpose: `core::rdm`, `core::frame`
+# read better than inventing synonyms for what the standards call them.
+module_name_repetitions = "allow"

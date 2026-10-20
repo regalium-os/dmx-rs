@@ -1,0 +1,28 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "regalium-dmx-probe"
+description = "Discover, watch and drive Art-Net, sACN and USB-DMX: an interactive TUI and scriptable CLI."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[lib]
+name = "dmx_probe"
+
+[[bin]]
+name = "dmx-probe"
+path = "src/bin/dmx-probe/main.rs"
+
+[dependencies]
+regalium-dmx.workspace = true
+regalium-dmx-telemetry-otel.workspace = true
+regalium-dmx-schema.workspace = true
+
+[lints]
+workspace = true

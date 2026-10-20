@@ -1,0 +1,18 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "regalium-dmx"
+description = "Pure-Rust DMX512, RDM, Art-Net and sACN: the Regalium DMX driver facade."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+regalium-dmx-runtime.workspace = true
+
+[lints]
+workspace = true

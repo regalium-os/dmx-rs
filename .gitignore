@@ -1,0 +1,8 @@
+target
+artifacts/
+fuzz/corpus/
+.regalium-data/
+/sites/
+bazel-*
+# Bazel's output links.
+/bazel-*
