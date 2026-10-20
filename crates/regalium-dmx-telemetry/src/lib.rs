@@ -18,8 +18,8 @@
 //! # Why this exists before the protocol does
 //!
 //! Spans at layer boundaries are a design constraint, not an observability
-//! feature bolted on later. A span wrapping `frame::decode` forces `decode`
-//! to take a tracer, which forces its caller to have one. Retrofitting that
+//! feature bolted on later. A span wrapping an RDM transaction forces it to
+//! take a tracer, which forces its caller to have one. Retrofitting that
 //! means changing every signature in the core.
 //!
 //! # Layer contract
@@ -44,8 +44,8 @@
 //!
 //! # Spans
 //!
-//! Span names are `dmx.<layer>.<operation>` — `dmx.frame.decode`,
-//! `dmx.rdm.discovery`, `dmx.artnet.poll`. Each crate's own documentation
+//! Span names are `dmx.<layer>.<operation>` — `dmx.rdm.discovery`,
+//! `dmx.artnet.poll`, `dmx.api.get_universe`. Each crate's own documentation
 //! lists the spans it opens.
 //!
 //! **Never open a span per frame.** A universe refreshes at up to 44 Hz;

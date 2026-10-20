@@ -33,13 +33,13 @@ fn pipeline() -> (Otel, SdkTracerProvider, InMemorySpanExporter) {
 #[test]
 fn a_span_reaches_the_exporter_with_its_declared_attributes() {
     let (otel, provider, exporter) = pipeline();
-    let span = Span::start(&otel, "dmx.frame.decode");
+    let span = Span::start(&otel, "dmx.rdm.decode");
     otel.attribute(SpanId(1), Attribute::int(keys::PACKET_OCTETS, 8));
     span.end();
     provider.force_flush().unwrap();
     let spans = exporter.get_finished_spans().unwrap();
     assert_eq!(spans.len(), 1);
-    assert_eq!(spans[0].name, "dmx.frame.decode");
+    assert_eq!(spans[0].name, "dmx.rdm.decode");
     let octets = spans[0]
         .attributes
         .iter()
@@ -50,7 +50,7 @@ fn a_span_reaches_the_exporter_with_its_declared_attributes() {
 #[test]
 fn a_failed_span_ends_with_the_error_status() {
     let (otel, provider, exporter) = pipeline();
-    Span::start(&otel, "dmx.frame.decode").fail(&"truncated at offset 0");
+    Span::start(&otel, "dmx.rdm.decode").fail(&"truncated at offset 0");
     provider.force_flush().unwrap();
     let spans = exporter.get_finished_spans().unwrap();
     assert!(
@@ -63,7 +63,7 @@ fn a_failed_span_ends_with_the_error_status() {
 #[test]
 fn without_a_tracer_nothing_is_started_or_kept() {
     let otel = Otel::from_meter(opentelemetry_sdk::metrics::SdkMeterProvider::default().meter("m"));
-    assert_eq!(otel.start("dmx.frame.decode", SpanId::NONE), SpanId::NONE);
+    assert_eq!(otel.start("dmx.rdm.decode", SpanId::NONE), SpanId::NONE);
     otel.attribute(SpanId::NONE, Attribute::int(keys::PACKET_OCTETS, 1));
     otel.end(SpanId::NONE, None);
 }

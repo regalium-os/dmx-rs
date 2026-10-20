@@ -27,8 +27,8 @@ Art-Net, sACN and RDM dissectors as the second opinion where we do not.
 | --- | --- | --- | --- |
 | 0 | workspace, layer contracts, conformance gates with negative tests, CI | all, `xtask` | **built** |
 | 1 | the telemetry seam and its OTel adapter, ported from bacnet-rs; DMX's keys, instruments and series shapes | `telemetry`, `telemetry-otel` | **built** |
-| 2 | DMX512 frames, universes, HTP/LTP merge; first corpus | `core` | next |
-| 3 | refresh loops on an injected clock; the transport trait; events | `core`, `runtime` | |
+| 2 | DMX512 frames, universes, HTP/LTP merge; first corpus | `core` | **built** |
+| 3 | refresh loops on an injected clock; the transport trait; events | `core`, `runtime` | next |
 | 4 | Art-Net 4: ArtDmx, ArtPoll/Reply, ArtSync, ArtAddress; first live output | `artnet`, `runtime` | |
 | 5 | sACN: data, sync, universe discovery, priority, source loss | `sacn` | |
 | 6 | the physical line: ENTTEC DMX USB Pro, RS-485 break generation; port auto-discovery | `serial` | |
@@ -37,7 +37,7 @@ Art-Net, sACN and RDM dissectors as the second opinion where we do not.
 | 8 | the field probe: TUI and CLI | `dmx-probe` | |
 | 9 | the server: gRPC, REST, MCP generated from the schema | `dmx-server` | |
 | — | the rig simulator, growing with each transport | `dmx-sim` | alongside 4–6b |
-| — | fuzz targets for every decoder | `fuzz/` | alongside each codec |
+| — | fuzz targets for every decoder | `fuzz/` | `frame` **built**; one per codec after |
 | — | Grafana dashboard and observability stack, as `telemetry.just` | `tools/` | after 8 |
 
 RDM is 6b rather than 2 on purpose: it is the hardest part of the protocol
@@ -83,6 +83,24 @@ own:
   seam's contract.
 
 The adapter pins the same SDK commit as bacnet-rs, so both export alike.
+
+## Phase 2, in detail
+
+- **Addresses** are 1 to 512 and convert to an index in one place, so the
+  slot-1-versus-octet-1 bug has nowhere to live.
+- **Frames** borrow their slots and are lossless: any start code is kept, a
+  short packet stays short, more than 512 slots is an error pointing at the
+  first slot too many.
+- **Universes** hold 512 levels, a sent length and a generation that moves
+  exactly when something a receiver would see changes: the refresh loop's
+  one-integer test for "send now or wait for keep-alive".
+- **Merging**: HTP per slot; LTP per slot *by change*, so a console resending
+  the same levels does not steal slots from the one that moved a fader.
+  Sources are bounded (8 by default) because they arrive from the network.
+- Alternate start codes are never applied or merged as levels.
+- No spans: all of this runs per frame (see the seam's contract).
+- Corpus `fixtures/frame/`: null, alternate and malformed packets, built
+  from the standard. Captured traffic arrives with Art-Net in Phase 4.
 
 ## Phase 7: the schema, to discuss
 

@@ -1374,6 +1374,7 @@ dependencies = [
 name = "regalium-dmx"
 version = "0.1.0"
 dependencies = [
+ "regalium-dmx-core",
  "regalium-dmx-runtime",
 ]
 

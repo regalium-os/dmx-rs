@@ -1,0 +1,19 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# Alternate start codes (ANSI E1.11): anything but 0x00. The slots are not
+# levels, so the meaning gives them as data. Known codes are named; any other
+# is kept as `alternate 0xNN` and re-encoded as it came.
+
+# An RDM start code (ANSI E1.20, 0xCC) with the sub-start-code 0x01 and a
+# message's first octets: carried here as opaque data until Phase 6b.
+cc 01 18 7a 70 => rdm 4 slots; data 01187a70
+# ASCII text, 0x17: "FOH".
+17 46 4f 48 => text 3 slots; data 464f48
+# A System Information Packet, 0xCF, alone.
+cf => sip 0 slots; no data
+# Start codes this crate does not name round-trip untouched.
+55 55 aa => alternate 0x55 2 slots; data 55aa
+91 7a 70 01 => alternate 0x91 3 slots; data 7a7001
+# 0xFF is a start code like any other.
+ff 00 => alternate 0xff 1 slots; data 00

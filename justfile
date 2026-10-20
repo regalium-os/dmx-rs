@@ -28,9 +28,8 @@ test:
     cargo test --workspace --all-targets
 
 # The phase gate: every committed corpus decodes and re-encodes byte for byte.
-# The first corpus lands in Phase 2 with the DMX512 frame codec. Until then
-# this recipe says so rather than reporting a pass it has not earned; once a
-# corpus exists, a corpus nothing reads is a failure.
+# Once a corpus exists this is a hard gate: a corpus no walker names is a file
+# nothing reads, and a filter matching no test passes having checked nothing.
 [group('test')]
 [doc('The phase gate: every committed corpus round-trips byte for byte')]
 fixtures:
@@ -38,17 +37,39 @@ fixtures:
     set -euo pipefail
     corpora=$(find crates -name '*.hex' 2>/dev/null | wc -l | tr -d ' ')
     if [ "$corpora" -eq 0 ]; then
-        echo "no fixture corpus yet; the first lands in Phase 2 with the frame codec"
-        exit 0
+        echo "no fixture corpus found; the frame corpus landed in Phase 2, so this is a failure"
+        exit 1
     fi
+    # The walkers compile their corpora in, so a file they do not name is a
+    # file nothing decodes. A corpus lives at crates/<crate>/fixtures/...
+    for f in $(find crates -name '*.hex'); do
+        crate=$(echo "$f" | cut -d/ -f1-2)
+        if ! grep -rqs "$(basename "$f")" "$crate/tests"; then
+            echo "$f is not named by any fixture walker in $crate/tests, so nothing decodes it"
+            exit 1
+        fi
+    done
+    echo "walking $corpora corpora"
     out=$(cargo test --workspace -- fixture 2>&1) || { echo "$out"; exit 1; }
-    # A filter that matches no test passes having checked nothing.
     ran=$(echo "$out" | awk '/^test result:/ {n += $4} END {print n + 0}')
     if [ "$ran" -eq 0 ]; then
         echo "no fixture test ran over $corpora corpora; the walker was renamed or removed"
         exit 1
     fi
     echo "$ran fixture test(s) passed"
+
+[group('test')]
+[doc('Fuzz every decoder for DURATION seconds each, on nightly')]
+fuzz duration='60':
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # libFuzzer needs nightly; put its rustc ahead of any other on PATH.
+    export PATH="$(dirname "$(rustup which --toolchain nightly rustc)"):$PATH"
+    cd fuzz
+    for target in $(cargo fuzz list); do
+        echo "fuzz $target for {{duration}} s"
+        cargo fuzz run "$target" -- -max_total_time={{duration}}
+    done
 
 [group('lint')]
 lint:

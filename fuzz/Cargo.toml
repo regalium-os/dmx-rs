@@ -1,0 +1,30 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# Fuzz targets for every decoder. A workspace of its own: libFuzzer is C++,
+# and keeping it here keeps it out of the driver's graph, which the deps gate
+# holds free of C. Run with `just fuzz`, on nightly.
+
+[package]
+name = "regalium-dmx-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+members = ["."]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+regalium-dmx = { path = "../crates/regalium-dmx" }
+
+[[bin]]
+name = "frame"
+path = "fuzz_targets/frame.rs"
+test = false
+doc = false
+bench = false

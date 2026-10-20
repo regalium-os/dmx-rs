@@ -16,4 +16,6 @@
 //!
 //! # State
 //!
-//! Phase 0: an empty crate.
+//! Phase 2: the core's frames, universes and merging, re-exported.
+
+pub use regalium_dmx_core::{address, error, frame, merge, start_code, universe};

@@ -108,8 +108,9 @@ own. MCP writes are refused unless the server is started with
 the-protobuf-project telemetry SDK via the seam, and only
 `regalium-dmx-telemetry-otel` may name it. Spans are named
 `dmx.<layer>.<operation>`. Attributes are declared with `trace_attrs!`; an
-undeclared field cannot be recorded. Never record slot values per frame at
-44 Hz: that is metrics, aggregated, not spans.
+undeclared field cannot be recorded. **No span per frame**: frame decode,
+universe updates and merges run at up to 44 Hz per universe and are measured
+by the frame metrics. Slot levels are never a metric label or a series.
 
 ## Schemas
 
