@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! The physical DMX512 line: 250 kbaud, 8N2, a break and mark-after-break
-//! ahead of every packet (E1.11 §8).
+//! ahead of every packet, as ANSI E1.11 times them.
 //!
 //! # Layer contract
 //!

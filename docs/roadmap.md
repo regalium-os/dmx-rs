@@ -26,12 +26,12 @@ Art-Net, sACN and RDM dissectors as the second opinion where we do not.
 | Phase | Delivers | Crates | State |
 | --- | --- | --- | --- |
 | 0 | workspace, layer contracts, conformance gates with negative tests, CI | all, `xtask` | **built** |
-| 1 | the telemetry seam and its OTel adapter, ported from bacnet-rs | `telemetry`, `telemetry-otel` | next |
-| 2 | DMX512 frames, universes, HTP/LTP merge; first corpus | `core` | |
+| 1 | the telemetry seam and its OTel adapter, ported from bacnet-rs; DMX's keys, instruments and series shapes | `telemetry`, `telemetry-otel` | **built** |
+| 2 | DMX512 frames, universes, HTP/LTP merge; first corpus | `core` | next |
 | 3 | refresh loops on an injected clock; the transport trait; events | `core`, `runtime` | |
 | 4 | Art-Net 4: ArtDmx, ArtPoll/Reply, ArtSync, ArtAddress; first live output | `artnet`, `runtime` | |
 | 5 | sACN: data, sync, universe discovery, priority, source loss | `sacn` | |
-| 6 | the physical line: ENTTEC DMX USB Pro, RS-485 break generation | `serial` | |
+| 6 | the physical line: ENTTEC DMX USB Pro, RS-485 break generation; port auto-discovery | `serial` | |
 | 6b | RDM: codec, discovery, GET/SET, over serial, Art-Net and sACN (E1.33 later) | `core`, transports | |
 | 7 | **the schema tree** — designed together, see below | `schema`, `protobuf/` | to discuss |
 | 8 | the field probe: TUI and CLI | `dmx-probe` | |
@@ -63,6 +63,26 @@ Not yet ported from bacnet-rs, each waiting on what it checks:
 | `version` gate, changelog, release workflow | the first release |
 | Bazel build and container images | a binary worth shipping (Phase 8) |
 | Dependabot and auto-merge | the first external dependency (Phase 1) |
+
+## Phase 1, in detail
+
+The seam is bacnet-rs's, unchanged in mechanism: declared keys, declared
+instruments, `trace_attrs!`, no-op defaults, no dependencies. What is DMX's
+own:
+
+- **Keys** (`keys/`): universe, protocol, node, Art-Net and sACN fields, and
+  RDM's UID, PID, command class and `DEVICE_INFO` identity.
+- **Series** (`instruments.rs`, `shape/`): frames and frame interval per
+  universe; slots, sources, sequence errors and lost sources; packets and
+  octets per protocol; node up and info; RDM requests (counted per UID,
+  timed per PID), device up and info, discovery counts.
+- **Histogram buckets** on `Instrument`, carried through the adapter: the
+  frame-interval histogram resolves 22–25 ms, where OpenTelemetry's defaults
+  jump from 10 to 25.
+- **No span per frame, and no slot levels as a series**, both stated in the
+  seam's contract.
+
+The adapter pins the same SDK commit as bacnet-rs, so both export alike.
 
 ## Phase 7: the schema, to discuss
 
