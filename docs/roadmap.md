@@ -32,13 +32,13 @@ Art-Net, sACN and RDM dissectors as the second opinion where we do not.
 | 3 | refresh loops on an injected clock; the transport trait; events | `core`, `runtime` | **built** |
 | 4 | Art-Net 4: ArtDmx, ArtPoll/Reply, ArtSync, ArtAddress; first live output; the receive and merge loop | `artnet`, `runtime` | **built** |
 | 5 | sACN: data, sync, universe discovery, priority, source loss | `sacn`, `core`, `runtime` | **built** |
-| 6 | the physical line: ENTTEC DMX USB Pro, RS-485 break generation; port auto-discovery | `serial` | next |
-| 6b | RDM: codec, discovery, GET/SET, over serial, Art-Net and sACN (E1.33 later) | `core`, transports | |
+| 6 | the physical line: ENTTEC DMX USB Pro, RS-485 break generation; port auto-discovery | `serial` | **built** |
+| 6b | RDM: codec, discovery, GET/SET, over serial, Art-Net and sACN (E1.33 later) | `core`, transports | next |
 | 7 | **the schema tree** — designed together, see below | `schema`, `protobuf/` | to discuss |
 | 8 | the field probe: TUI and CLI | `dmx-probe` | |
 | 9 | the server: gRPC, REST, MCP generated from the schema | `dmx-server` | |
 | — | the rig simulator, growing with each transport | `dmx-sim` | alongside 4–6b |
-| — | fuzz targets for every decoder | `fuzz/` | `frame`, `artnet`, `sacn` **built**; one per codec after |
+| — | fuzz targets for every decoder | `fuzz/` | `frame`, `artnet`, `sacn`, `enttec` **built**; one per codec after |
 | — | Grafana dashboard and observability stack, as `telemetry.just` | `tools/` | after 8 |
 
 RDM is 6b rather than 2 on purpose: it is the hardest part of the protocol

@@ -37,6 +37,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "enttec"
+path = "fuzz_targets/enttec.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "frame"
 path = "fuzz_targets/frame.rs"
 test = false

@@ -1,0 +1,22 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# Octets that are not one whole message. `error <kind> at <offset>`.
+
+# Nothing.
+ => error truncated need 5 at 0
+
+# No start delimiter.
+7f 0a 00 00 e7 => error start at 0
+
+# No end delimiter.
+7e 0a 00 00 00 => error end at 4
+
+# A length over 600.
+7e 06 59 02 => error too-long 601 at 2
+
+# A length of 3 with 2 octets of data.
+7e 06 03 00 01 02 e7 => error truncated need 8 at 7
+
+# Two messages back to back: one decode reads one.
+7e 0a 00 00 e7 7e 0a 00 00 e7 => error trailing at 5

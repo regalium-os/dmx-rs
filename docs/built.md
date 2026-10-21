@@ -136,3 +136,27 @@ The adapter pins the same SDK commit as bacnet-rs, so both export alike.
 - **Not yet**: `SO_REUSEADDR` (std cannot set it, so one process per host
   holds port 5568), applying synchronisation, per-address priority (start
   code 0xDD), and a multicast test on a real interface.
+
+## Phase 6, in detail
+
+- **The widget API** (`serial::enttec`): messages, a resynchronising
+  stream framer bounded to one message, widget parameters, BCD serial
+  numbers. Pure. Corpus `fixtures/`: requests, replies, malformed.
+- **Discovery** (`serial::discovery`, `serial::scan`): enumerate (sysfs on
+  Linux, for VID:PID, serial and product, without libudev; device names on
+  macOS), classify (widget, maybe, no), probe. The probe is a state machine
+  on an injected clock and sends only Get Serial and Get Parameters, never
+  DMX. Generic FTDI cables are *maybe*, and probed only when the caller
+  allows.
+- **The port** (`serial::port`): raw termios and poll through `rustix`,
+  which links nothing; the deps gate and `cargo deny` pass.
+- **Transports**: `Enttec` probes on open and refuses a port that does not
+  answer; pads to the API's 24-slot minimum; receives clean packets only.
+  `Uart` makes the break from a zero octet at 57 600 baud (156 µs low,
+  17 µs mark), then sends at 250 kbaud 8N2, refreshing continuously.
+- **Tested without hardware**: a fake widget on a pseudo-terminal answers
+  the probe, receives DMX and sends it back, through the real port code.
+- **Not yet**: Windows ports; USB ids on macOS (IOKit is C); receiving on a
+  raw UART; the Pro Mk2's second port; and the bench — a real widget and a
+  scope on the UART's break.
+

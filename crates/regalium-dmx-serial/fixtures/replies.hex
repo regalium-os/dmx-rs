@@ -1,0 +1,25 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# What a widget sends back.
+
+# Serial number 12345678, BCD, least significant first.
+7e 0a 04 00 78 56 34 12 e7 => get-serial 4 octets; serial 12345678
+
+# A serial with a nibble that is not a decimal digit: kept, not read.
+7e 0a 04 00 7a 00 00 00 e7 => get-serial 4 octets; serial not bcd 7a000000
+
+# Parameters: firmware 1.44, break 9 ticks (96 µs), MAB 1 tick, 40 packets a second.
+7e 03 05 00 44 01 09 01 28 e7 => get-parameters 5 octets; firmware 0x0144 break 9 ticks mab 1 ticks rate 40
+
+# Parameters with two octets of user configuration after them.
+7e 03 07 00 10 02 1b 04 00 ab cd e7 => get-parameters 7 octets; firmware 0x0210 break 27 ticks mab 4 ticks rate 0
+
+# Received DMX, status clean: start code and three slots.
+7e 05 05 00 00 00 0a 00 1e e7 => received-dmx 5 octets; status 0x00 start 0x00 3 slots; 1=10 3=30
+
+# Received DMX with the overrun bit: the transport drops it.
+7e 05 03 00 02 00 63 e7 => received-dmx 3 octets; status 0x02 start 0x00 1 slots; 1=99
+
+# A vendor's own label, 200: kept whole.
+7e c8 03 00 01 02 03 e7 => label 200 3 octets; data 010203

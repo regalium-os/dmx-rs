@@ -61,6 +61,12 @@ another sACN application needs `SO_REUSEADDR` set before binding, which
 `std` cannot do. The fix is `socket2`, a pure-Rust dependency on `libc`; it
 waits until a rig needs a console and this driver on one machine.
 
+**Serial ports without C cost reach.** Opening ports through `rustix` keeps
+the graph free of C, but leaves Windows without ports for now, and macOS
+without USB ids: IOKit is C, so a Mac sees device names only, and a widget
+whose name carries no ENTTEC serial is a *maybe*. A raw UART's break timing
+depends on how fast the driver changes rate, which only a scope shows.
+
 **Corpora built from the specifications.** Phases 2, 4 and 5 decode
 records laid out from the standards' tables, not traffic captured from
 equipment. They prove the codecs agree with our reading of the standards;
