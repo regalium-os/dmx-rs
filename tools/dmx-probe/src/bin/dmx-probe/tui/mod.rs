@@ -35,14 +35,12 @@ pub(crate) fn run(mut engine: Engine) -> std::io::Result<()> {
         while !app.quit {
             if let Some(model) = engine.model().cloned() {
                 terminal.draw(|frame| ui::draw(frame, &app, &model))?;
-                if event::poll(FRAME)? {
-                    if let Event::Key(key) = event::read()? {
-                        if key.kind == KeyEventKind::Press {
-                            if let Some(command) = keys::key(&mut app, &model, key) {
-                                engine.send(command);
-                            }
-                        }
-                    }
+                if event::poll(FRAME)?
+                    && let Event::Key(key) = event::read()?
+                    && key.kind == KeyEventKind::Press
+                    && let Some(command) = keys::key(&mut app, &model, key)
+                {
+                    engine.send(command);
                 }
             } else {
                 std::thread::sleep(FRAME);

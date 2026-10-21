@@ -15,10 +15,10 @@ use std::time::{Duration, Instant};
 fn until(engine: &mut Engine, secs: u64, mut done: impl FnMut(&Model) -> bool) -> Model {
     let start = Instant::now();
     loop {
-        if let Some(model) = engine.model() {
-            if done(model) || start.elapsed() > Duration::from_secs(secs) {
-                return model.clone();
-            }
+        if let Some(model) = engine.model()
+            && (done(model) || start.elapsed() > Duration::from_secs(secs))
+        {
+            return model.clone();
         }
         std::thread::sleep(Duration::from_millis(20));
     }

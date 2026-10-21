@@ -8,7 +8,6 @@ use super::chrome::block;
 use crate::tui::app::App;
 use crate::tui::theme::{AMBER, CHIP, CYAN, GREEN, MUTED, RED, TEAL, TEXT, muted, strong};
 use dmx_probe::engine::model::{Model, Severity, State, Universe};
-use dmx_probe::engine::patch;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style};
@@ -31,9 +30,9 @@ pub(crate) fn draw(frame: &mut Frame<'_>, area: Rect, app: &App, model: &Model) 
     ])
     .spacing(1)
     .areas(right);
-    self::policy(frame, policy, model);
-    self::nodes(frame, nodes, model);
-    self::rdm(frame, rdm, model);
+    super::side::policy(frame, policy, model);
+    super::side::nodes(frame, nodes, model);
+    super::side::rdm(frame, rdm, model);
 }
 
 fn state(u: &Universe) -> (&'static str, Color) {
@@ -48,11 +47,16 @@ fn state(u: &Universe) -> (&'static str, Color) {
 /// flat and red while failing.
 pub(crate) fn spark(u: &Universe, width: usize) -> Line<'static> {
     const BARS: [char; 8] = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+    /// Where each taller bar starts, in milliseconds.
+    const STEPS: [f32; 7] = [21.0, 22.0, 23.0, 24.0, 25.0, 27.0, 30.0];
     let skip = u.intervals.len().saturating_sub(width);
     let spans = u.intervals.iter().skip(skip).map(|&ms| {
-        let at = (((ms - 20.0) / 2.0).clamp(0.0, 7.0)) as usize;
+        let at = STEPS.iter().take_while(|&&t| ms >= t).count();
         let colour = if ms > 24.0 { AMBER } else { TEAL };
-        Span::styled(BARS[at].to_string(), Style::new().fg(colour))
+        Span::styled(
+            BARS.get(at).copied().unwrap_or('█').to_string(),
+            Style::new().fg(colour),
+        )
     });
     let mut line: Vec<Span<'static>> = spans.collect();
     if u.state == State::Failing {
@@ -137,129 +141,4 @@ fn events(frame: &mut Frame<'_>, area: Rect, model: &Model) {
         })
         .collect();
     frame.render_widget(Paragraph::new(lines).block(block("Events", false)), area);
-}
-
-fn policy(frame: &mut Frame<'_>, area: Rect, model: &Model) {
-    let p = &model.policy;
-    let flag = |on: bool, what: &'static str| {
-        if on {
-            Span::styled("on", strong(if what == "b" { RED } else { AMBER }))
-        } else {
-            Span::styled("off", strong(GREEN))
-        }
-    };
-    let inner = block("Policy — every write passes here", false);
-    let at = inner.inner(area);
-    frame.render_widget(inner, area);
-    let [b, h, m, mcp] = Layout::vertical([Constraint::Length(1); 4]).areas(at);
-    frame.render_widget(
-        Line::from(vec![
-            Span::styled("blackout    ", muted()),
-            flag(p.blackout, "b"),
-            Span::styled("  b", muted()),
-        ]),
-        b,
-    );
-    frame.render_widget(
-        Line::from(vec![
-            Span::styled("hold        ", muted()),
-            flag(p.hold, "h"),
-            Span::styled("  h", muted()),
-        ]),
-        h,
-    );
-    let width = usize::from(m.width.saturating_sub(17));
-    let full = width * usize::from(p.master) / 255;
-    frame.render_widget(
-        Line::from(vec![
-            Span::styled("master      ", muted()),
-            Span::styled("█".repeat(full), Style::new().fg(AMBER)),
-            Span::styled("░".repeat(width - full), Style::new().fg(CHIP)),
-            Span::styled(format!(" {:>3}", p.master), strong(TEXT)),
-        ]),
-        m,
-    );
-    let (word, c) = if model.mcp_writes {
-        ("allowed", AMBER)
-    } else {
-        ("refused", AMBER)
-    };
-    frame.render_widget(
-        Line::from(vec![
-            Span::styled("mcp writes  ", muted()),
-            Span::styled(word, strong(c)),
-            Span::styled("  needs --allow-writes", muted()),
-        ]),
-        mcp,
-    );
-}
-
-fn nodes(frame: &mut Frame<'_>, area: Rect, model: &Model) {
-    let lines: Vec<Line<'_>> = model
-        .nodes
-        .iter()
-        .map(|n| {
-            let (s, c) = if n.reachable {
-                ("reachable", GREEN)
-            } else {
-                ("unreachable", AMBER)
-            };
-            Line::from(vec![
-                Span::styled(format!("{:<7}", n.protocol.name()), muted()),
-                Span::raw(format!("{:<28}", format!("{} · {}", n.name, n.address))),
-                Span::styled(s, strong(c)),
-            ])
-        })
-        .collect();
-    frame.render_widget(
-        Paragraph::new(lines).block(block(format!("Nodes · {}", model.nodes.len()), false)),
-        area,
-    );
-}
-
-fn rdm(frame: &mut Frame<'_>, area: Rect, model: &Model) {
-    let silent = model.devices.iter().filter(|d| !d.responding).count();
-    let overlaps: Vec<String> = model
-        .universes
-        .iter()
-        .flat_map(|u| {
-            patch::overlaps(&patch::owners(
-                model.devices.iter().filter(|d| d.universe == u.name),
-            ))
-            .into_iter()
-            .map(move |(a, b)| format!("{} {a}–{b}", u.name))
-        })
-        .collect();
-    let lines = vec![
-        Line::from(vec![
-            Span::styled("devices   ", muted()),
-            Span::styled(model.devices.len().to_string(), strong(TEXT)),
-        ]),
-        Line::from(vec![
-            Span::styled("silent    ", muted()),
-            Span::styled(
-                silent.to_string(),
-                strong(if silent > 0 { AMBER } else { GREEN }),
-            ),
-        ]),
-        Line::from(vec![
-            Span::styled("overlaps  ", muted()),
-            Span::styled(
-                overlaps.len().to_string(),
-                strong(if overlaps.is_empty() { GREEN } else { RED }),
-            ),
-            Span::styled(format!("  {}", overlaps.join(", ")), muted()),
-        ]),
-        Line::from(vec![
-            Span::styled("last      ", muted()),
-            Span::styled(
-                model
-                    .discovery
-                    .clone()
-                    .unwrap_or_else(|| "not yet · 4 then D".to_owned()),
-                muted(),
-            ),
-        ]),
-    ];
-    frame.render_widget(Paragraph::new(lines).block(block("RDM", false)), area);
 }

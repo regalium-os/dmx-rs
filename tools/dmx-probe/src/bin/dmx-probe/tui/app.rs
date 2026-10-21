@@ -76,6 +76,10 @@ pub(crate) enum Modal {
 
 /// The TUI's state.
 #[derive(Debug)]
+#[allow(
+    clippy::struct_excessive_bools,
+    reason = "independent UI toggles, not a state machine"
+)]
 pub(crate) struct App {
     pub(crate) tab: Tab,
     /// The universe selected on the Rig tab and shown on Universes.

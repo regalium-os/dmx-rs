@@ -5,12 +5,18 @@
 //! tested by drawing it into a buffer.
 
 pub(crate) mod chrome;
+mod confirm;
 mod dialog;
+mod grid;
+mod inspector;
 mod nodes;
+mod patchmap;
 mod rdm;
 mod rig;
+mod side;
 mod traffic;
 mod universe;
+mod writes;
 
 use super::app::{App, Tab};
 use super::theme::{GROUND, text};
@@ -50,8 +56,8 @@ pub(crate) fn draw(frame: &mut Frame<'_>, app: &App, model: &Model) {
         }
     }
     chrome::footer(frame, foot, app, model);
-    if let Some(modal) = &app.modal {
-        dialog::modal(frame, area, model, modal);
+    if let Some(open) = &app.modal {
+        dialog::modal(frame, area, model, open);
     }
     if app.help {
         dialog::help(frame, area);

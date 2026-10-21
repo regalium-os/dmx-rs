@@ -8,7 +8,7 @@ use super::chrome::block;
 use crate::tui::app::App;
 use crate::tui::theme::{CHIP, CYAN, GROUND, MUTED, TEAL, TEXT, muted, strong};
 use dmx_probe::dissect::{Dissection, dissect};
-use dmx_probe::engine::model::Model;
+use dmx_probe::engine::model::{Model, Packet};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style};
@@ -36,14 +36,35 @@ pub(crate) fn draw(frame: &mut Frame<'_>, area: Rect, app: &App, model: &Model) 
     let [left, right] = Layout::horizontal([Constraint::Min(0), Constraint::Length(70)])
         .spacing(2)
         .areas(body);
-    let newest: Vec<_> = model.packets.iter().rev().collect();
-    let selected = newest.get(app.packet).copied();
+    let newest: Vec<&Packet> = model.packets.iter().rev().collect();
+    list(frame, left, app, &newest);
+    let Some(packet) = newest.get(app.packet).copied() else {
+        frame.render_widget(
+            Paragraph::new("Nothing captured yet.").block(block("Packet", false)),
+            right,
+        );
+        return;
+    };
+    let [top, bottom] = Layout::vertical([Constraint::Min(0), Constraint::Length(12)])
+        .spacing(1)
+        .areas(right);
+    let read = dissect(packet);
+    let field = app.field.min(read.tree.len().saturating_sub(1));
+    tree(frame, top, &read, field, packet.octets.len());
+    octets(
+        frame,
+        bottom,
+        packet,
+        read.tree.get(field).and_then(|f| f.span),
+    );
+}
+
+fn list(frame: &mut Frame<'_>, area: Rect, app: &App, newest: &[&Packet]) {
     let rows = newest
         .iter()
-        .take(usize::from(left.height))
+        .take(usize::from(area.height))
         .enumerate()
         .map(|(i, p)| {
-            let d = dissect(p);
             let row = Row::new([
                 Cell::from(Span::styled(p.time.clone(), muted())),
                 Cell::from(Span::styled(
@@ -52,7 +73,7 @@ pub(crate) fn draw(frame: &mut Frame<'_>, area: Rect, app: &App, model: &Model) 
                 )),
                 Cell::from(Span::styled(p.protocol.name(), muted())),
                 Cell::from(p.peer.clone()),
-                Cell::from(d.summary),
+                Cell::from(dissect(p).summary),
                 Cell::from(Span::styled(p.octets.len().to_string(), muted())),
             ]);
             if i == app.packet {
@@ -74,31 +95,21 @@ pub(crate) fn draw(frame: &mut Frame<'_>, area: Rect, app: &App, model: &Model) 
         Table::new(rows, widths)
             .header(header)
             .block(block("Traffic", true)),
-        left,
+        area,
     );
+}
 
-    let [tree, octets] = Layout::vertical([Constraint::Min(0), Constraint::Length(12)])
-        .spacing(1)
-        .areas(right);
-    let Some(packet) = selected else {
-        frame.render_widget(
-            Paragraph::new("Nothing captured yet.").block(block("Packet", false)),
-            right,
-        );
-        return;
-    };
-    let d: Dissection = dissect(packet);
-    let field = app.field.min(d.tree.len().saturating_sub(1));
-    let lines: Vec<Line<'_>> = d
+fn tree(frame: &mut Frame<'_>, area: Rect, read: &Dissection, field: usize, len: usize) {
+    let lines: Vec<Line<'_>> = read
         .tree
         .iter()
         .enumerate()
         .map(|(i, f)| {
-            let span = f.span.map_or_else(String::new, |(a, b)| {
-                if a == b {
+            let span = f.span.map_or_else(String::new, |(a, z)| {
+                if a == z {
                     a.to_string()
                 } else {
-                    format!("{a}–{b}")
+                    format!("{a}–{z}")
                 }
             });
             let indent = "  ".repeat(usize::from(f.depth));
@@ -116,19 +127,17 @@ pub(crate) fn draw(frame: &mut Frame<'_>, area: Rect, app: &App, model: &Model) 
         })
         .collect();
     frame.render_widget(
-        Paragraph::new(lines).block(block(
-            format!("{} · {} octets", d.summary, packet.octets.len()),
-            false,
-        )),
-        tree,
+        Paragraph::new(lines).block(block(format!("{} · {len} octets", read.summary), false)),
+        area,
     );
+}
 
-    let lit = d.tree.get(field).and_then(|f| f.span);
+fn octets(frame: &mut Frame<'_>, area: Rect, packet: &Packet, lit: Option<(usize, usize)>) {
     let lines: Vec<Line<'_>> = packet
         .octets
         .chunks(16)
         .enumerate()
-        .take(usize::from(octets.height.saturating_sub(2)))
+        .take(usize::from(area.height.saturating_sub(2)))
         .map(|(row, chunk)| {
             let mut spans = vec![Span::styled(format!("{:04x}  ", row * 16), muted())];
             for (i, b) in chunk.iter().enumerate() {
@@ -145,5 +154,5 @@ pub(crate) fn draw(frame: &mut Frame<'_>, area: Rect, app: &App, model: &Model) 
             Line::from(spans)
         })
         .collect();
-    frame.render_widget(Paragraph::new(lines).block(block("Octets", false)), octets);
+    frame.render_widget(Paragraph::new(lines).block(block("Octets", false)), area);
 }

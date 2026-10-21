@@ -4,6 +4,10 @@
 //! The rig as the probe shows it: plain data, copied out of the runtime
 //! every tick, so a view never holds a lock the runtime needs.
 
+mod feed;
+
+pub use feed::{EVENTS, Event, PACKETS, Packet, Severity};
+
 use std::collections::VecDeque;
 
 /// The transport a universe or node is on.
@@ -123,32 +127,6 @@ pub struct Device {
     pub responding: bool,
 }
 
-/// How serious an event is, for its colour.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Severity {
-    /// Something came back or started.
-    Good,
-    /// Worth a look.
-    Warn,
-    /// Something stopped working.
-    Bad,
-    /// For information.
-    Info,
-}
-
-/// One line of the event feed.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Event {
-    /// When, as `HH:MM:SS` since the probe started.
-    pub time: String,
-    /// What kind: `send failed`, `source found`.
-    pub kind: String,
-    /// What happened.
-    pub text: String,
-    /// How serious.
-    pub severity: Severity,
-}
-
 /// The output policy, as it stands.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Policy {
@@ -158,21 +136,6 @@ pub struct Policy {
     pub hold: bool,
     /// The grand master, 0 to 255.
     pub master: u8,
-}
-
-/// A packet seen on the wire, kept whole for the Traffic tab.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Packet {
-    /// When, as `HH:MM:SS.mmm` since the probe started.
-    pub time: String,
-    /// Whether this probe sent it.
-    pub sent: bool,
-    /// Its transport.
-    pub protocol: Protocol,
-    /// Who it went to or came from.
-    pub peer: String,
-    /// The datagram or message, as on the wire.
-    pub octets: Vec<u8>,
 }
 
 /// Everything the probe shows, at one moment.
@@ -199,8 +162,3 @@ pub struct Model {
     /// What the probe is attached to: `demo rig`, `0.0.0.0`.
     pub attached: String,
 }
-
-/// Events kept for the feed.
-pub const EVENTS: usize = 200;
-/// Packets kept for the Traffic tab.
-pub const PACKETS: usize = 500;

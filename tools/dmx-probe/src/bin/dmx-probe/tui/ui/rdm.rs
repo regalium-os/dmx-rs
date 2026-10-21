@@ -7,14 +7,14 @@
 use super::chrome::block;
 use crate::tui::app::App;
 use crate::tui::keys::devices;
-use crate::tui::theme::{AMBER, CHIP, DEEP, GREEN, MUTED, RED, TEAL, TEXT, muted, strong};
-use dmx_probe::engine::model::Model;
+use crate::tui::theme::{AMBER, CHIP, GREEN, MUTED, RED, TEXT, muted, strong};
+use dmx_probe::engine::model::{Device, Model};
 use dmx_probe::engine::patch;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::Style;
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Cell, Paragraph, Row, Table};
+use ratatui::widgets::{Cell, Paragraph, Row, Table, Wrap};
 
 pub(crate) fn draw(frame: &mut Frame<'_>, area: Rect, app: &App, model: &Model) {
     let universe = model
@@ -41,11 +41,23 @@ pub(crate) fn draw(frame: &mut Frame<'_>, area: Rect, app: &App, model: &Model) 
     let [left, right] = Layout::horizontal([Constraint::Min(0), Constraint::Length(56)])
         .spacing(2)
         .areas(body);
+    table(frame, left, app, &list, &owners);
+    let [top, bottom] = Layout::vertical([Constraint::Length(10), Constraint::Min(0)])
+        .spacing(1)
+        .areas(right);
+    let selected = list.get(app.device).copied();
+    detail(frame, top, selected, &owners);
+    super::patchmap::draw(frame, bottom, &list, selected, &owners);
+}
 
+fn claims_twice(d: &Device, owners: &[u8; 513]) -> bool {
+    patch::span(d).any(|a| owners.get(usize::from(a)).is_some_and(|&n| n > 1))
+}
+
+fn table(frame: &mut Frame<'_>, area: Rect, app: &App, list: &[&Device], owners: &[u8; 513]) {
     let header =
         Row::new(["uid", "label", "model", "addr", "fp", "pers", "state"]).style(strong(MUTED));
     let rows = list.iter().enumerate().map(|(i, d)| {
-        let clash = patch::span(d).any(|a| owners.get(usize::from(a)).is_some_and(|&n| n > 1));
         let (s, c) = if d.responding {
             ("responding", GREEN)
         } else {
@@ -64,7 +76,7 @@ pub(crate) fn draw(frame: &mut Frame<'_>, area: Rect, app: &App, model: &Model) 
             Cell::from(d.model.clone()),
             Cell::from(Span::styled(
                 d.address.to_string(),
-                strong(if clash { RED } else { TEXT }),
+                strong(if claims_twice(d, owners) { RED } else { TEXT }),
             )),
             Cell::from(d.footprint.to_string()),
             Cell::from(d.personality.clone()),
@@ -89,17 +101,15 @@ pub(crate) fn draw(frame: &mut Frame<'_>, area: Rect, app: &App, model: &Model) 
         Table::new(rows, widths)
             .header(header)
             .block(block(format!("Devices · {}", list.len()), true)),
-        left,
+        area,
     );
+}
 
-    let [detail, map] = Layout::vertical([Constraint::Length(10), Constraint::Min(0)])
-        .spacing(1)
-        .areas(right);
-    let selected = list.get(app.device).copied();
+fn detail(frame: &mut Frame<'_>, area: Rect, selected: Option<&Device>, owners: &[u8; 513]) {
     let lines = match selected {
         Some(d) => {
-            let last = d.address + d.footprint.saturating_sub(1);
-            let clash = patch::span(d).any(|a| owners.get(usize::from(a)).is_some_and(|&n| n > 1));
+            let end = d.address + d.footprint.saturating_sub(1);
+            let clash = claims_twice(d, owners);
             vec![
                 Line::from(vec![
                     Span::styled("uid            ", muted()),
@@ -120,7 +130,7 @@ pub(crate) fn draw(frame: &mut Frame<'_>, area: Rect, app: &App, model: &Model) 
                         strong(if clash { RED } else { TEXT }),
                     ),
                     Span::raw(format!(
-                        "  {}–{last}{}",
+                        "  {}–{end}{}",
                         d.address,
                         if clash { " · overlaps" } else { "" }
                     )),
@@ -158,45 +168,10 @@ pub(crate) fn draw(frame: &mut Frame<'_>, area: Rect, app: &App, model: &Model) 
             )
         },
     );
-    frame.render_widget(Paragraph::new(lines).block(block(title, false)), detail);
-
-    let mut lines: Vec<Line<'_>> = (0..16u16)
-        .map(|row| {
-            let spans = (1..=32u16).map(|c| {
-                let a = row * 32 + c;
-                let n = owners.get(usize::from(a)).copied().unwrap_or(0);
-                let colour = match n {
-                    0 => CHIP,
-                    1 if ((a - 1) / 16) % 2 == 0 => TEAL,
-                    1 => DEEP,
-                    _ => RED,
-                };
-                Span::styled("█", Style::new().fg(colour))
-            });
-            Line::from(
-                std::iter::once(Span::styled(format!("{:>4} ", row * 32 + 1), muted()))
-                    .chain(spans)
-                    .collect::<Vec<_>>(),
-            )
-        })
-        .collect();
-    lines.push(Line::default());
-    for (a, b) in patch::overlaps(&owners) {
-        lines.push(Line::from(vec![
-            Span::styled(format!("{a}–{b}"), strong(RED)),
-            Span::styled(" claimed twice", muted()),
-        ]));
-    }
-    if let Some(d) = selected {
-        let free = patch::first_free(list.iter().copied(), &d.uid, d.footprint)
-            .map_or_else(|| "none".to_owned(), |a| a.to_string());
-        lines.push(Line::from(vec![
-            Span::styled(format!("first free run of {}: ", d.footprint), muted()),
-            Span::styled(free, strong(TEXT)),
-        ]));
-    }
     frame.render_widget(
-        Paragraph::new(lines).block(block("Patch map · 1–512", false)),
-        map,
+        Paragraph::new(lines)
+            .wrap(Wrap { trim: true })
+            .block(block(title, false)),
+        area,
     );
 }

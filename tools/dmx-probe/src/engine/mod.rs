@@ -12,11 +12,13 @@
 mod apply;
 mod capture;
 mod command;
+mod feed;
 pub mod model;
 pub mod patch;
 mod rdm;
 mod snapshot;
 mod stats;
+mod work;
 
 pub use capture::Capture;
 pub use command::Command;

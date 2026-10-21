@@ -4,6 +4,12 @@
 //! Prints the demo's frame rate and interval histogram for stage-left: a
 //! measurement of the system clock's waiting on this machine.
 
+#![allow(
+    clippy::expect_used,
+    clippy::cast_precision_loss,
+    reason = "a measuring tool, run by hand"
+)]
+
 use dmx_probe::engine::Engine;
 use dmx_probe::sim;
 use std::time::Duration;
