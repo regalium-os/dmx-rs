@@ -3,7 +3,7 @@
 
 [package]
 name = "regalium-dmx-runtime"
-description = "Async runtime for the Regalium DMX driver: refresh loops, sources, merging and RDM over every transport."
+description = "Runtime for the Regalium DMX driver: one output thread per transport, refresh on an injected clock, events, and later sources, merging and RDM."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -11,8 +11,12 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+# Plain std, no async executor, as bacnet-rs's runtime: each output path owns
+# its thread and its timing rather than sharing an executor with whatever
+# else the caller runs, where a busy task would delay someone's refresh.
 [dependencies]
 regalium-dmx-core.workspace = true
+regalium-dmx-telemetry.workspace = true
 
 [lints]
 workspace = true

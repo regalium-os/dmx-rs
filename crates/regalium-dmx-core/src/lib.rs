@@ -21,9 +21,10 @@
 //! | [`universe`] | a universe's levels, sent length and change generation |
 //! | [`merge`] | HTP and LTP merging of several sources into one universe |
 //! | [`error`] | decode errors that borrow the octets, and refused changes |
+//! | [`refresh`] | when to send a universe: the refresh policy as a state machine |
+//! | [`transport`] | the trait every transport satisfies |
 //! | `rdm` | E1.20 messages: header, checksum, parameter ids, NACK reasons (6b) |
 //! | `discovery` | E1.20 binary-search discovery as a state machine (6b) |
-//! | `transport` | the trait every transport satisfies (Phase 3) |
 //!
 //! Must not: perform I/O, hold an operating-system handle, read a clock, log
 //! or panic. A malformed frame is an error return, never an abort.
@@ -45,12 +46,15 @@
 //!
 //! # State
 //!
-//! Phase 2: [`address`], [`start_code`], [`frame`], [`universe`], [`merge`]
-//! and [`error`] are built, with the first fixture corpus under `fixtures/`.
+//! Phase 3: [`address`], [`start_code`], [`frame`], [`universe`], [`merge`],
+//! [`error`], [`refresh`] and [`transport`] are built, with the first fixture
+//! corpus under `fixtures/`.
 
 pub mod address;
 pub mod error;
 pub mod frame;
 pub mod merge;
+pub mod refresh;
 pub mod start_code;
+pub mod transport;
 pub mod universe;

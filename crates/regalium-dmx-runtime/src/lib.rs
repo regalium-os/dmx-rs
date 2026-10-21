@@ -1,21 +1,66 @@
 // Copyright 2026 RegaliumOS™.
 // SPDX-License-Identifier: Apache-2.0
 
-//! The runtime: where the core's decisions meet a clock and a socket.
+//! The runtime: where the core's decisions meet a clock and a transport.
+//!
+//! The core's [`Refresher`](regalium_dmx_core::refresh::Refresher) says send
+//! now or idle until when. This crate owns the clock, the waiting and the
+//! sending that act on it: one [`Output`] per transport, refreshing every
+//! universe patched to it, woken early when a level changes.
+//!
+//! # Lifecycle is explicit
+//!
+//! [`Output::builder`] constructs and starts nothing, so a caller can build,
+//! patch, inspect and discard. [`Output::run`] blocks until
+//! [`Output::close`]; [`Output::start`] runs the same loop on exactly one
+//! thread of its own, and the [`Running`] it returns joins that thread on
+//! close or drop. Close is idempotent. A transport that fails is an
+//! [`Event`], reported once when it starts and once when it stops — never an
+//! error return, since the loop keeps trying and the caller has nothing to
+//! retry.
+//!
+//! # Why a thread per output, not an executor
+//!
+//! A universe is late when its thread is late. With one thread per
+//! transport, an output's timing depends on its own work alone, never on
+//! whatever else shares an executor with it. The waiting is a condition
+//! variable on the injected [`Clock`]; what it achieves is on
+//! `dmx.frame.interval`.
 //!
 //! # Layer contract
 //!
-//! Owns: one refresh loop per output universe, run at its own rate and
-//! falling back to a keep-alive when nothing changes; the sources feeding each
-//! universe and their loss; RDM transactions and discovery over any
-//! transport; the event stream a caller watches.
+//! Owns: the clock, the waiting, each output's thread, the patch, and the
+//! event queue's backpressure policy (drop and count, never block).
 //!
-//! Lifecycle is explicit: `new` constructs and never spawns, `run` blocks
-//! until cancelled and does not return before its tasks have stopped, `close`
-//! is idempotent. A node going silent is an event, not an error.
+//! Must not: decode a protocol header, or decide when to send. The first is
+//! a transport's; the second is the core's refresher's, and a runtime that
+//! second-guesses it has a timing rule no table test covers.
 //!
-//! Allowed imports: the core, every transport, the schema, the seam.
+//! Allowed imports: `regalium-dmx-core`, every transport, the schema, the
+//! seam.
+//!
+//! # Spans
+//!
+//! None per frame. Frames are recorded on `dmx.frames`,
+//! `dmx.frame.interval`, `dmx.transport.packets` and `dmx.universe.slots`.
 //!
 //! # State
 //!
-//! Phase 0: an empty crate. Lands in Phase 3.
+//! Phase 3: [`Output`] over any transport, on [`SystemClock`] or
+//! [`ManualClock`]; [`Levels`] handles; send failure and recovery as
+//! [`Event`]s. Receiving, merging and source loss arrive with Phase 4.
+
+mod builder;
+mod clock;
+mod event;
+mod levels;
+mod output;
+mod pump;
+mod running;
+
+pub use builder::Builder;
+pub use clock::{Clock, ManualClock, SystemClock, Wake};
+pub use event::{EVENT_QUEUE, Event, Events};
+pub use levels::Levels;
+pub use output::{MIN_INTERVAL, Output};
+pub use running::Running;

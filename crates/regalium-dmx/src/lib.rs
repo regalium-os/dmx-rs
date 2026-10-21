@@ -16,6 +16,10 @@
 //!
 //! # State
 //!
-//! Phase 2: the core's frames, universes and merging, re-exported.
+//! Phase 3: the core's frames, universes, merging, refresh policy and
+//! transport trait, and the runtime's outputs, re-exported.
 
-pub use regalium_dmx_core::{address, error, frame, merge, start_code, universe};
+pub use regalium_dmx_core::{
+    address, error, frame, merge, refresh, start_code, transport, universe,
+};
+pub use regalium_dmx_runtime as runtime;

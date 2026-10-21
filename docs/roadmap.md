@@ -28,8 +28,8 @@ Art-Net, sACN and RDM dissectors as the second opinion where we do not.
 | 0 | workspace, layer contracts, conformance gates with negative tests, CI | all, `xtask` | **built** |
 | 1 | the telemetry seam and its OTel adapter, ported from bacnet-rs; DMX's keys, instruments and series shapes | `telemetry`, `telemetry-otel` | **built** |
 | 2 | DMX512 frames, universes, HTP/LTP merge; first corpus | `core` | **built** |
-| 3 | refresh loops on an injected clock; the transport trait; events | `core`, `runtime` | next |
-| 4 | Art-Net 4: ArtDmx, ArtPoll/Reply, ArtSync, ArtAddress; first live output | `artnet`, `runtime` | |
+| 3 | refresh loops on an injected clock; the transport trait; events | `core`, `runtime` | **built** |
+| 4 | Art-Net 4: ArtDmx, ArtPoll/Reply, ArtSync, ArtAddress; first live output; the receive and merge loop | `artnet`, `runtime` | next |
 | 5 | sACN: data, sync, universe discovery, priority, source loss | `sacn` | |
 | 6 | the physical line: ENTTEC DMX USB Pro, RS-485 break generation; port auto-discovery | `serial` | |
 | 6b | RDM: codec, discovery, GET/SET, over serial, Art-Net and sACN (E1.33 later) | `core`, transports | |
@@ -101,6 +101,26 @@ The adapter pins the same SDK commit as bacnet-rs, so both export alike.
 - No spans: all of this runs per frame (see the seam's contract).
 - Corpus `fixtures/frame/`: null, alternate and malformed packets, built
   from the standard. Captured traffic arrives with Art-Net in Phase 4.
+
+## Phase 3, in detail
+
+- **The refresh policy** is three numbers — interval, repeats, keep-alive —
+  and a pure state machine (`core::refresh`) that answers *send now* or
+  *idle until T* from the time and the universe's generation. Serial
+  refreshes continuously; network transports send on change and keep alive,
+  each supplying its own policy through `Transport::refresh`.
+- **The transport trait** (`core::transport`) carries frames, never protocol
+  headers, and blocks with a timeout, as bacnet-rs's datalinks do.
+- **One output thread per transport** (`runtime::Output`), plain `std`, on an
+  injected clock: `SystemClock` for a rig, `ManualClock` for tests, where an
+  hour of refresh runs in milliseconds with every frame at its exact time.
+- A level change wakes the loop; it is sent at the next interval, never
+  sooner, never at the keep-alive.
+- A failing transport is one `SendFailed` event and one log line, then one
+  `SendRecovered`; events never block the loop (drop and count).
+- Every send records `dmx.frames`, `dmx.frame.interval`, packets and slots.
+- Receiving and merging are deferred to Phase 4, where a real receiver
+  exercises them.
 
 ## Phase 7: the schema, to discuss
 
