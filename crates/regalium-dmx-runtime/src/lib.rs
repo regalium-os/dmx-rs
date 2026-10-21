@@ -57,14 +57,16 @@ mod event;
 mod input;
 mod levels;
 mod output;
+mod policy;
 mod pump;
 pub mod rdm;
 mod running;
 
 pub use builder::OutputBuilder;
-pub use clock::{Clock, ManualClock, SystemClock, Wake};
+pub use clock::{Clock, MAX_SLACK, ManualClock, SystemClock, Wake};
 pub use event::{EVENT_QUEUE, Event, Events};
 pub use input::{Input, InputBuilder, MAX_WAIT, Merged, RETRY};
 pub use levels::Levels;
 pub use output::{MIN_INTERVAL, Output};
+pub use policy::{Policy, Rules, scale};
 pub use running::Running;

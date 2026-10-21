@@ -65,6 +65,12 @@ impl Merged {
         lock(&self.listening.state).universe.clone()
     }
 
+    /// Every source, with its priority and whether it is merged or held.
+    #[must_use]
+    pub fn source_list(&self) -> Vec<(regalium_dmx_core::merge::SourceId, u8, bool)> {
+        lock(&self.listening.state).merge.list().collect()
+    }
+
     /// How many sources are merged now.
     #[must_use]
     pub fn sources(&self) -> usize {

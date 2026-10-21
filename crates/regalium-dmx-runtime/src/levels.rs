@@ -32,6 +32,14 @@ pub(crate) struct SlotState {
     pub(crate) refresher: Refresher,
     pub(crate) buf: Vec<u8>,
     pub(crate) failing: bool,
+    /// Moves when what a receiver would see moves: the levels (unless
+    /// held) or the policy. The refresher's generation.
+    pub(crate) counter: u64,
+    /// The universe and policy generations the counter last counted.
+    pub(crate) universe_seen: u64,
+    pub(crate) policy_seen: u64,
+    /// The last frame sent outside blackout: what hold keeps sending.
+    pub(crate) held: Vec<u8>,
 }
 
 impl Slot {
@@ -43,6 +51,10 @@ impl Slot {
                 refresher,
                 buf: Vec::with_capacity(513),
                 failing: false,
+                counter: 0,
+                universe_seen: 0,
+                policy_seen: 0,
+                held: Vec::with_capacity(513),
             }),
         }
     }

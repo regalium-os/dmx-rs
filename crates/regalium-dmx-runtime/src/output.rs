@@ -15,6 +15,7 @@ use crate::builder::OutputBuilder;
 use crate::clock::{Clock, Wake, lock};
 use crate::event::Sink;
 use crate::levels::{Levels, Slot};
+use crate::policy::Policy;
 use regalium_dmx_core::refresh::{Refresh, Refresher};
 use regalium_dmx_core::transport::Transport;
 use regalium_dmx_telemetry::{Logger, Meter, NoopLogger, NoopMeter};
@@ -38,6 +39,7 @@ pub(crate) struct Inner<T, C> {
     pub(crate) events: Sink,
     pub(crate) meter: Arc<dyn Meter>,
     pub(crate) logger: Arc<dyn Logger>,
+    pub(crate) policy: Arc<Policy>,
 }
 
 /// One transport's output. `Clone`: every clone is the same output, so one
@@ -64,6 +66,7 @@ impl<T: Transport, C: Clock> Output<T, C> {
             clock,
             meter: Arc::new(NoopMeter),
             logger: Arc::new(NoopLogger),
+            policy: Arc::new(Policy::new()),
         }
     }
 
@@ -154,6 +157,12 @@ impl<T: Transport, C: Clock> Output<T, C> {
     #[must_use]
     pub fn is_closed(&self) -> bool {
         self.inner.closed.load(Ordering::Acquire)
+    }
+
+    /// The policy every frame of this output passes through.
+    #[must_use]
+    pub fn policy(&self) -> &Arc<Policy> {
+        &self.inner.policy
     }
 
     /// Events dropped because the reader fell behind.

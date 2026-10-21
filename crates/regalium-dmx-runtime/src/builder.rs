@@ -8,6 +8,7 @@ use crate::clock::{Clock, Wake};
 use crate::event::Events;
 use crate::event::Sink;
 use crate::output::{Inner, Output};
+use crate::policy::Policy;
 use regalium_dmx_core::transport::Transport;
 use regalium_dmx_telemetry::{Logger, Meter};
 use std::sync::atomic::AtomicBool;
@@ -20,6 +21,7 @@ pub struct OutputBuilder<T, C> {
     pub(crate) clock: C,
     pub(crate) meter: Arc<dyn Meter>,
     pub(crate) logger: Arc<dyn Logger>,
+    pub(crate) policy: Arc<Policy>,
 }
 
 impl<T: Transport, C: Clock> OutputBuilder<T, C> {
@@ -37,18 +39,29 @@ impl<T: Transport, C: Clock> OutputBuilder<T, C> {
         self
     }
 
+    /// Passes every frame through `policy`, shared with the rig's other
+    /// outputs, rather than a policy of its own.
+    #[must_use]
+    pub fn policy(mut self, policy: Arc<Policy>) -> Self {
+        self.policy = policy;
+        self
+    }
+
     /// The output, and the events it will report. Starts nothing.
     pub fn build(self) -> (Output<T, C>, Events) {
         let (events, rx) = Sink::new();
+        let wake = Arc::new(Wake::new());
+        self.policy.watch(&wake);
         let inner = Inner {
             transport: self.transport,
             clock: self.clock,
-            wake: Arc::new(Wake::new()),
+            wake,
             closed: AtomicBool::new(false),
             slots: Mutex::new(Vec::new()),
             events,
             meter: self.meter,
             logger: self.logger,
+            policy: self.policy,
         };
         (
             Output {

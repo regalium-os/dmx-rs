@@ -8,6 +8,7 @@
 //! deadline, so a test runs an hour of refresh in milliseconds and every
 //! frame lands at exactly the time the policy says.
 
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
@@ -76,22 +77,41 @@ impl Wake {
     }
 }
 
+/// The most a [`SystemClock`] wakes early by, however late its waits run.
+pub const MAX_SLACK: Duration = Duration::from_millis(5);
+
 /// Real time, from a monotonic clock, waited with a condition variable.
 ///
-/// A wait wakes within the operating system's timer resolution, typically
-/// well under a millisecond; what it achieves is on `dmx.frame.interval`.
-#[derive(Clone, Copy, Debug)]
+/// A timed wait comes back late by the operating system's timer slack:
+/// measured at about 3 ms on macOS, which at 44 Hz is a frame in eight. So
+/// the clock learns its own lateness — a moving average of how late each
+/// wait returned, at most [`MAX_SLACK`] — wakes that much early, and yields
+/// the processor until the deadline, which costs a few hundred microseconds
+/// of yielding rather than milliseconds of spinning. A wake-up still ends
+/// either part at once.
+///
+/// `Clone`: clones share what has been learnt.
+#[derive(Clone, Debug)]
 pub struct SystemClock {
     epoch: Instant,
+    slack_ns: Arc<AtomicU64>,
 }
 
 impl SystemClock {
-    /// A clock whose epoch is now.
+    /// A clock whose epoch is now, assuming a millisecond of slack until it
+    /// has measured its own.
     #[must_use]
     pub fn new() -> Self {
         Self {
             epoch: Instant::now(),
+            slack_ns: Arc::new(AtomicU64::new(1_000_000)),
         }
+    }
+
+    /// The slack learnt so far.
+    #[must_use]
+    pub fn slack(&self) -> Duration {
+        Duration::from_nanos(self.slack_ns.load(Ordering::Relaxed))
     }
 }
 
@@ -107,12 +127,25 @@ impl Clock for SystemClock {
     }
 
     fn wait(&self, wake: &Wake, deadline: Duration) {
-        let left = deadline.saturating_sub(self.now());
-        if left.is_zero() {
-            wake.take();
-        } else {
-            wake.wait_for(left);
+        let slack = self.slack();
+        let early = deadline.saturating_sub(slack);
+        let left = early.saturating_sub(self.now());
+        if !left.is_zero() {
+            if wake.wait_for(left) {
+                return;
+            }
+            // How late the timed wait came back: learnt an eighth at a time.
+            let late = self.now().saturating_sub(early).min(MAX_SLACK);
+            let learnt = (slack.as_nanos() * 7 + late.as_nanos()) / 8;
+            self.slack_ns.store(u64::try_from(learnt).unwrap_or(u64::MAX), Ordering::Relaxed);
         }
+        while self.now() < deadline {
+            if wake.take() {
+                return;
+            }
+            std::thread::yield_now();
+        }
+        wake.take();
     }
 }
 

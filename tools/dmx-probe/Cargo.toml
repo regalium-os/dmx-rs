@@ -21,8 +21,12 @@ path = "src/bin/dmx-probe/main.rs"
 
 [dependencies]
 regalium-dmx.workspace = true
+regalium-dmx-telemetry.workspace = true
 regalium-dmx-telemetry-otel.workspace = true
 regalium-dmx-schema.workspace = true
+# The terminal UI, and the arguments: the same versions bacnet-probe uses.
+ratatui = "0.30"
+clap = { version = "4.6", features = ["derive"] }
 
 [lints]
 workspace = true

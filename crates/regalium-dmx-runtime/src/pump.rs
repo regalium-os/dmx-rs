@@ -6,19 +6,47 @@
 //!
 //! The universe's lock is held only to copy its levels into the slot's
 //! buffer; the send happens with it released, so a serial write that takes a
-//! whole frame time never blocks a caller setting a level.
+//! whole frame time never blocks a caller setting a level. What is copied
+//! passes through the output policy on the way (see [`crate::policy`]).
 
 use crate::clock::{Clock, lock};
 use crate::event::Event;
-use crate::levels::Slot;
+use crate::levels::{Slot, SlotState};
 use crate::output::Inner;
+use crate::policy::{Rules, scale};
 use regalium_dmx_core::frame::Frame;
 use regalium_dmx_core::refresh::Step;
+use regalium_dmx_core::start_code::StartCode;
 use regalium_dmx_core::transport::Transport;
+use regalium_dmx_core::universe::Universe;
 use regalium_dmx_telemetry::shape::{self, Direction, UniverseId};
 use regalium_dmx_telemetry::{Attribute, Level, SpanId, keys};
 use std::sync::Arc;
 use std::time::Duration;
+
+/// Fills the slot's buffer with what goes out under `rules`: zeros in
+/// blackout, the held frame under hold, else the levels scaled by master.
+fn compose(rules: &Rules, universe: &Universe, state: &mut SlotState) {
+    if rules.hold && !rules.blackout && !state.held.is_empty() {
+        state.buf.clone_from(&state.held);
+        return;
+    }
+    state.buf.clear();
+    universe.frame().encode(&mut state.buf);
+    let levels = state.buf.first() == Some(&StartCode::NULL.0);
+    if let Some((_, slots)) = state.buf.split_first_mut() {
+        if rules.blackout {
+            slots.fill(0);
+            return;
+        }
+        if levels && rules.master != u8::MAX {
+            for slot in slots {
+                *slot = scale(*slot, rules.master);
+            }
+        }
+    }
+    state.held.clone_from(&state.buf);
+}
 
 impl<T: Transport, C: Clock> Inner<T, C> {
     pub(crate) fn step(&self) -> Option<Duration> {
@@ -35,14 +63,24 @@ impl<T: Transport, C: Clock> Inner<T, C> {
         let mut state = lock(&slot.state);
         let state = &mut *state;
         let previous = state.refresher.last_sent();
+        let rules = self.policy.rules();
         let generation = {
             let universe = lock(&slot.universe);
-            let generation = universe.generation();
+            // What a receiver would see moves with the policy, and with the
+            // levels unless they are held.
+            if rules.generation != state.policy_seen {
+                state.policy_seen = rules.generation;
+                state.counter += 1;
+            }
+            if !rules.hold && universe.generation() != state.universe_seen {
+                state.universe_seen = universe.generation();
+                state.counter += 1;
+            }
+            let generation = state.counter;
             match state.refresher.next(now, generation) {
                 Step::Idle { until } => return until,
                 Step::Send => {
-                    state.buf.clear();
-                    universe.frame().encode(&mut state.buf);
+                    compose(&rules, &universe, state);
                     generation
                 }
             }
