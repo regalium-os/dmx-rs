@@ -45,7 +45,7 @@ fn two_consoles_over_art_net_merge_highest_first_on_a_listening_input() {
     let rx = socket("127.0.0.1:9".parse().unwrap());
     let to = rx.local_addr().unwrap();
     let (input, _events) = Input::builder(Arc::clone(&rx), SystemClock::new()).build();
-    let merged = input.listen(1, Merge::new(Mode::Htp));
+    let merged = input.listen(1, Merge::new(Mode::Htp)).unwrap();
     let mut listening = input.start().unwrap();
 
     let (a, mut a_running) = console(to, &[200, 0, 30, 0]);

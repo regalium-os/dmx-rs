@@ -82,6 +82,7 @@ dependencies = [
  "regalium-dmx-artnet",
  "regalium-dmx-core",
  "regalium-dmx-runtime",
+ "regalium-dmx-sacn",
 ]
 
 [[package]]
@@ -109,6 +110,14 @@ dependencies = [
 
 [[package]]
 name = "regalium-dmx-runtime"
+version = "0.1.0"
+dependencies = [
+ "regalium-dmx-core",
+ "regalium-dmx-telemetry",
+]
+
+[[package]]
+name = "regalium-dmx-sacn"
 version = "0.1.0"
 dependencies = [
  "regalium-dmx-core",

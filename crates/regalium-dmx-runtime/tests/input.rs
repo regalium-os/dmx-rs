@@ -8,7 +8,7 @@
 
 mod common;
 
-use common::script::{Next, Script};
+use common::script::Script;
 use regalium_dmx_core::address::Address;
 use regalium_dmx_core::merge::{Merge, Mode, SourceId};
 use regalium_dmx_runtime::{Event, Events, Input, ManualClock};
@@ -40,7 +40,7 @@ fn level(n: u16) -> Address {
 #[test]
 fn two_sources_merge_highest_first_and_each_is_found_once() {
     let (input, events, script, _clock) = rig();
-    let merged = input.listen(1, Merge::new(Mode::Htp));
+    let merged = input.listen(1, Merge::new(Mode::Htp)).unwrap();
     script.frame(1, 10, &[0x00, 255, 0, 40]);
     script.frame(1, 20, &[0x00, 100, 200]);
     script.frame(1, 10, &[0x00, 255, 0, 40]);
@@ -74,7 +74,7 @@ fn two_sources_merge_highest_first_and_each_is_found_once() {
 #[test]
 fn a_universe_nobody_listens_to_and_an_rdm_frame_are_dropped() {
     let (input, events, script, _clock) = rig();
-    let merged = input.listen(1, Merge::new(Mode::Htp));
+    let merged = input.listen(1, Merge::new(Mode::Htp)).unwrap();
     script.frame(2, 10, &[0x00, 255]);
     script.frame(1, 10, &[0xCC, 1, 2]);
     input.step(Duration::ZERO);
@@ -86,7 +86,7 @@ fn a_universe_nobody_listens_to_and_an_rdm_frame_are_dropped() {
 #[test]
 fn a_silent_source_leaves_after_the_timeout_and_the_last_takes_the_light() {
     let (input, events, script, clock) = rig();
-    let merged = input.listen(1, Merge::new(Mode::Htp));
+    let merged = input.listen(1, Merge::new(Mode::Htp)).unwrap();
     script.frame(1, 10, &[0x00, 50]);
     input.step(Duration::ZERO);
     clock.set(Duration::from_secs(5));
@@ -117,7 +117,7 @@ fn a_silent_source_leaves_after_the_timeout_and_the_last_takes_the_light() {
 fn a_failing_receive_is_reported_once_and_its_recovery_once() {
     let (input, events, script, _clock) = rig();
     for _ in 0..5 {
-        script.0.lock().unwrap().push_back(Next::Fail);
+        script.fail();
     }
     let worked: Vec<bool> = (0..6).map(|_| input.step(Duration::ZERO)).collect();
     assert_eq!(worked, [false, false, false, false, false, true]);
@@ -134,8 +134,10 @@ fn a_failing_receive_is_reported_once_and_its_recovery_once() {
 #[test]
 fn listening_twice_keeps_the_first_merge() {
     let (input, _events, script, _clock) = rig();
-    let a = input.listen(1, Merge::new(Mode::Htp).max_sources(1));
-    let b = input.listen(1, Merge::new(Mode::Ltp));
+    let a = input
+        .listen(1, Merge::new(Mode::Htp).max_sources(1))
+        .unwrap();
+    let b = input.listen(1, Merge::new(Mode::Ltp)).unwrap();
     script.frame(1, 10, &[0x00, 1]);
     script.frame(1, 20, &[0x00, 2]);
     input.step(Duration::ZERO);
@@ -146,6 +148,6 @@ fn listening_twice_keeps_the_first_merge() {
         "the second source is past the first merge's limit"
     );
     assert_eq!(a.snapshot().level(level(1)), 1);
-    assert!(input.ignore(1));
-    assert!(!input.ignore(1));
+    assert!(input.ignore(1).unwrap());
+    assert!(!input.ignore(1).unwrap());
 }

@@ -56,6 +56,17 @@ real dimmer accepts our break length. We need a bench: at least one Art-Net
 node, one sACN receiver, one USB-DMX widget and a few RDM fixtures. Without
 it, Phases 4–6b end on Wireshark captures only.
 
+**One sACN process per host.** Receiving multicast on port 5568 alongside
+another sACN application needs `SO_REUSEADDR` set before binding, which
+`std` cannot do. The fix is `socket2`, a pure-Rust dependency on `libc`; it
+waits until a rig needs a console and this driver on one machine.
+
+**Corpora built from the specifications.** Phases 2, 4 and 5 decode
+records laid out from the standards' tables, not traffic captured from
+equipment. They prove the codecs agree with our reading of the standards;
+a misreading would agree with itself. Wireshark captures from real nodes
+are the second opinion still owed.
+
 **Standards carry licence terms.** E1.11, E1.20 and E1.31 are free from
 ESTA's TSP downloads, under licence terms; Art-Net is Artistic Licence's free spec.
 Citing clauses in doc comments is fine; quoting tables at length is not.

@@ -13,6 +13,7 @@ authors.workspace = true
 
 [dependencies]
 regalium-dmx-core.workspace = true
+regalium-dmx-telemetry.workspace = true
 
 [lints]
 workspace = true

@@ -95,17 +95,25 @@ impl<T: Transport, C: Clock> Output<T, C> {
         Levels::new(slot, Arc::clone(&self.inner.wake))
     }
 
-    /// Stops refreshing `universe`. Returns whether it was patched. Handles
-    /// to it keep working, but nothing sends what they set.
+    /// Stops refreshing `universe`, and tells receivers through the
+    /// transport's [`end`](Transport::end). Returns whether it was patched.
+    /// Handles to it keep working, but nothing sends what they set.
     #[allow(
         clippy::must_use_candidate,
         reason = "unpatching is done for its effect"
     )]
     pub fn unpatch(&self, universe: u32) -> bool {
-        let mut slots = lock(&self.inner.slots);
-        let before = slots.len();
-        slots.retain(|s| s.number != universe);
-        slots.len() != before
+        let removed = {
+            let mut slots = lock(&self.inner.slots);
+            let before = slots.len();
+            slots.retain(|s| s.number != universe);
+            slots.len() != before
+        };
+        if removed {
+            // Receivers time the source out if this is lost; nothing to retry.
+            let _ = self.inner.transport.end(universe);
+        }
+        removed
     }
 
     /// Sends every universe that is due now, and returns the earliest next
@@ -129,6 +137,10 @@ impl<T: Transport, C: Clock> Output<T, C> {
             }
             let deadline = next.unwrap_or_else(|| inner.clock.now().saturating_add(IDLE));
             inner.clock.wait(&inner.wake, deadline);
+        }
+        // Closing ends every universe, as unpatching one does.
+        for slot in lock(&inner.slots).iter() {
+            let _ = inner.transport.end(slot.number);
         }
     }
 

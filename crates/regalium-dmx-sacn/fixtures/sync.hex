@@ -1,0 +1,10 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# E1.31 synchronisation packets: release data held for a sync address.
+
+# Sync address 9000, sequence 4.
+00 10 00 00 41 53 43 2d 45 31 2e 31 37 00 00 00 70 21 00 00 00 08 5a 7c 1e 2f 0b 9d 4c 3e 8f 6a 1b 2c 3d 4e 5f 60 70 0b 00 00 00 01 04 23 28 00 00 => sync 5a7c1e2f-0b9d-4c3e-8f6a-1b2c3d4e5f60 seq 4 address 9000 reserved 0000
+
+# Reserved octets set: kept.
+00 10 00 00 41 53 43 2d 45 31 2e 31 37 00 00 00 70 21 00 00 00 08 5a 7c 1e 2f 0b 9d 4c 3e 8f 6a 1b 2c 3d 4e 5f 60 70 0b 00 00 00 01 ff 00 01 ab cd => sync 5a7c1e2f-0b9d-4c3e-8f6a-1b2c3d4e5f60 seq 255 address 1 reserved abcd

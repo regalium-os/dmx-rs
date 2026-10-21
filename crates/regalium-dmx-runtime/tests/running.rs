@@ -38,6 +38,11 @@ fn a_running_output_keeps_its_interval_exactly_and_close_joins_it() {
     running.close();
     running.close();
     assert!(output.is_closed());
+    assert_eq!(
+        *wire.ended.lock().unwrap(),
+        [1],
+        "closing ends the universe"
+    );
     let stopped = wire.sent().len();
     std::thread::sleep(Duration::from_millis(20));
     assert_eq!(wire.sent().len(), stopped, "nothing after close");

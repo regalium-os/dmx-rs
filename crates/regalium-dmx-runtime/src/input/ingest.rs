@@ -64,10 +64,18 @@ impl<T: Transport, C: Clock> Inner<T, C> {
         let now = self.clock.now();
         let id = UniverseId::new(protocol, got.universe);
         let mut state = lock(&listening.state);
+        if got.ended {
+            self.drop_source(&id, got.source, &mut state);
+            return;
+        }
         let before = state.merge.sources();
         // A source past the merge's limit is not merged; the ones already
         // there keep the universe.
-        if state.merge.update(got.source, &frame).is_err() {
+        if state
+            .merge
+            .update_at(got.source, got.priority, &frame)
+            .is_err()
+        {
             return;
         }
         match state.heard.iter_mut().find(|h| h.0 == got.source) {
@@ -108,15 +116,21 @@ impl<T: Transport, C: Clock> Inner<T, C> {
                 .map(|h| h.0)
                 .collect();
             for source in silent {
-                state.heard.retain(|h| h.0 != source);
-                state.merge.remove(source);
-                shape::record_source_lost(self.meter.as_ref(), &id);
-                self.source_event(&id, source, false, &state);
-                let MergeState {
-                    merge, universe, ..
-                } = &mut *state;
-                merge.render(universe);
+                self.drop_source(&id, source, &mut state);
             }
+        }
+    }
+
+    /// Takes `source` out of the merge, timed out or ended, and re-renders.
+    fn drop_source(&self, id: &UniverseId<'_>, source: SourceId, state: &mut MergeState) {
+        state.heard.retain(|h| h.0 != source);
+        if state.merge.remove(source) {
+            shape::record_source_lost(self.meter.as_ref(), id);
+            self.source_event(id, source, false, state);
+            let MergeState {
+                merge, universe, ..
+            } = state;
+            merge.render(universe);
         }
     }
 

@@ -15,6 +15,7 @@ authors.workspace = true
 regalium-dmx-artnet.workspace = true
 regalium-dmx-core.workspace = true
 regalium-dmx-runtime.workspace = true
+regalium-dmx-sacn.workspace = true
 
 [lints]
 workspace = true

@@ -1,0 +1,10 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# Valid root layers with vectors this crate does not decode: kept whole.
+
+# An extended packet with an unknown framing vector.
+00 10 00 00 41 53 43 2d 45 31 2e 31 37 00 00 00 70 1e 00 00 00 08 5a 7c 1e 2f 0b 9d 4c 3e 8f 6a 1b 2c 3d 4e 5f 60 70 08 00 00 00 99 01 02 => other root 0x00000008 framing 0x00000099 46 octets
+
+# An E1.33 (RDMnet) broker root vector.
+00 10 00 00 41 53 43 2d 45 31 2e 31 37 00 00 00 70 1c 00 00 00 09 5a 7c 1e 2f 0b 9d 4c 3e 8f 6a 1b 2c 3d 4e 5f 60 70 06 00 00 00 01 => other root 0x00000009 framing 0x00000001 44 octets

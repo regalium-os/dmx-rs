@@ -76,27 +76,42 @@ impl<T: Transport, C: Clock> Input<T, C> {
         InputBuilder::new(transport, clock)
     }
 
-    /// Merges `universe` by `merge`, or returns the handle to it if it is
-    /// already listened to; it then keeps its merge.
-    #[must_use]
-    pub fn listen(&self, universe: u32, merge: Merge) -> Merged {
+    /// Merges `universe` by `merge`, joining it on the transport, or
+    /// returns the handle to it if it is already listened to; it then keeps
+    /// its merge.
+    ///
+    /// # Errors
+    ///
+    /// When the transport cannot receive the universe, as when a multicast
+    /// group cannot be joined. Nothing is listened to then.
+    pub fn listen(&self, universe: u32, merge: Merge) -> Result<Merged, T::Error> {
         let mut listening = lock(&self.inner.listening);
-        let known = listening.iter().find(|l| l.number == universe).cloned();
-        let listening = known.unwrap_or_else(|| {
-            let new = Arc::new(Listening::new(universe, merge));
-            listening.push(Arc::clone(&new));
-            new
-        });
-        Merged { listening }
+        if let Some(known) = listening.iter().find(|l| l.number == universe) {
+            return Ok(Merged {
+                listening: Arc::clone(known),
+            });
+        }
+        self.inner.transport.join(universe)?;
+        let new = Arc::new(Listening::new(universe, merge));
+        listening.push(Arc::clone(&new));
+        Ok(Merged { listening: new })
     }
 
-    /// Stops merging `universe`. Returns whether it was listened to.
-    #[allow(clippy::must_use_candidate, reason = "done for its effect")]
-    pub fn ignore(&self, universe: u32) -> bool {
+    /// Stops merging `universe` and leaves it on the transport. Returns
+    /// whether it was listened to.
+    ///
+    /// # Errors
+    ///
+    /// When the transport failed to leave it; it is no longer merged.
+    pub fn ignore(&self, universe: u32) -> Result<bool, T::Error> {
         let mut listening = lock(&self.inner.listening);
         let before = listening.len();
         listening.retain(|l| l.number != universe);
-        listening.len() != before
+        if listening.len() == before {
+            return Ok(false);
+        }
+        self.inner.transport.leave(universe)?;
+        Ok(true)
     }
 
     /// Receives at most one frame, waiting at most `timeout`, merges it,

@@ -6,19 +6,30 @@
 //! # Layer contract
 //!
 //! Owns: the E1.31 root, framing and DMP layers; synchronisation and
-//! universe-discovery packets; source priority, sequence numbers and the
-//! stream-terminated option; source loss after E1.31 §6.7.1's timeout; and a
-//! multicast socket satisfying the core's transport trait.
+//! universe-discovery packets ([`codec`]); source priority, sequence
+//! numbers and the stream-terminated option; the multicast group per
+//! universe; and a socket satisfying the core's transport trait ([`Sacn`]).
 //!
-//! Must not: merge sources. Priority selects a source; combining what is left
-//! is the core's `merge`, so Art-Net and sACN merge identically.
+//! Must not: merge sources. A source's priority travels to the core's
+//! merge with its frame, and the merge chooses, so Art-Net and sACN merge
+//! identically.
 //!
 //! Allowed imports: `regalium-dmx-core`, `regalium-dmx-telemetry`.
 //!
 //! # Spans
 //!
-//! `dmx.sacn.{decode,encode,send,discovery}`.
+//! None yet: data packets run per frame and are measured by the runtime's
+//! frame metrics. `dmx.sacn.discovery` arrives with the probe, where
+//! discovery is a call a person waits on.
 //!
 //! # State
 //!
-//! Phase 0: an empty crate. Lands in Phase 5.
+//! Phase 5: the codec, with its fixture corpus; the socket, sending to each
+//! universe's multicast group, receiving the universes joined, announcing
+//! its universes, and ending them with stream-terminated packets.
+
+pub mod codec;
+pub mod sequence;
+pub mod socket;
+
+pub use socket::Sacn;

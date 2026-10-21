@@ -31,6 +31,7 @@ pub(crate) struct Sent {
 pub(crate) struct Wire {
     pub(crate) log: Arc<Mutex<Vec<Sent>>>,
     pub(crate) failing: Arc<AtomicBool>,
+    pub(crate) ended: Arc<Mutex<Vec<u32>>>,
 }
 
 impl Wire {
@@ -70,6 +71,11 @@ impl Transport for Recording {
 
     fn refresh(&self) -> Refresh {
         self.refresh
+    }
+
+    fn end(&self, universe: u32) -> Result<(), Unplugged> {
+        self.wire.ended.lock().unwrap().push(universe);
+        Ok(())
     }
 
     fn send(&self, universe: u32, frame: &Frame<'_>) -> Result<(), Unplugged> {

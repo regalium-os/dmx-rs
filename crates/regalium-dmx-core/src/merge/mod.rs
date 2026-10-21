@@ -4,10 +4,14 @@
 //! Combining several sources into one universe: highest takes precedence
 //! (HTP) or latest takes precedence (LTP), slot by slot.
 //!
-//! Which sources take part is decided before they get here. sACN's priority
-//! (ANSI E1.31) chooses among sources and hands only the highest-priority
-//! ones to a merge; Art-Net merges up to two sources per port. Either way the
-//! combining is this module's, so Art-Net and sACN merge identically.
+//! # Priority first
+//!
+//! Each source has a priority, 0 to 200 as ANSI E1.31 numbers them. Only
+//! the sources at the highest priority present take part; the rest are
+//! held, not merged, and take over when the higher ones leave. Art-Net has
+//! no priority, so every Art-Net source is at [`DEFAULT_PRIORITY`] and all
+//! of them merge. Either way the combining is this module's, so Art-Net
+//! and sACN merge identically.
 //!
 //! # LTP is per slot, and by change
 //!
@@ -26,44 +30,25 @@
 use crate::address::SLOTS;
 use crate::error::Rejected;
 use crate::frame::Frame;
-use crate::universe::Universe;
 
 /// Sources a merge holds unless built with [`Merge::max_sources`]: enough
 /// for a primary console, a backup and a few remotes. Bounded, because
 /// sources arrive from the network, and memory per source is ~4.5 KiB.
 pub const DEFAULT_SOURCES: usize = 8;
 
-/// How slots from several sources combine.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Mode {
-    /// Highest takes precedence: each slot is the highest level any source
-    /// sends. Right for intensities; wrong for a pan, where it picks a side.
-    Htp,
-    /// Latest takes precedence: each slot follows the source that last
-    /// changed it.
-    Ltp,
-}
+/// The priority of a source that states none: ANSI E1.31's default, 100.
+pub const DEFAULT_PRIORITY: u8 = 100;
 
-impl Mode {
-    /// The name `dmx.merge.mode` carries: `htp` or `ltp`.
-    #[must_use]
-    pub const fn name(self) -> &'static str {
-        match self {
-            Self::Htp => "htp",
-            Self::Ltp => "ltp",
-        }
-    }
-}
+mod mode;
+mod render;
 
-/// Who a source is, as the transport that received it numbers it: an
-/// Art-Net sender's address, an sACN CID mapped to an integer.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct SourceId(pub u64);
+pub use mode::{Mode, SourceId};
 
 /// One source's last levels, and when it last changed each slot.
 #[derive(Clone, Debug)]
 struct Input {
     source: SourceId,
+    priority: u8,
     levels: [u8; SLOTS],
     len: usize,
     changed: [u64; SLOTS],
@@ -112,14 +97,30 @@ impl Merge {
         self.inputs.len()
     }
 
-    /// Takes `frame` as `source`'s latest levels, adding the source if new.
+    /// Takes `frame` as `source`'s latest levels at [`DEFAULT_PRIORITY`],
+    /// adding the source if new.
+    ///
+    /// # Errors
+    ///
+    /// As [`Merge::update_at`].
+    pub fn update(&mut self, source: SourceId, frame: &Frame<'_>) -> Result<(), Rejected> {
+        self.update_at(source, DEFAULT_PRIORITY, frame)
+    }
+
+    /// Takes `frame` as `source`'s latest levels at `priority`, adding the
+    /// source if new. A source may change its priority between frames.
     ///
     /// # Errors
     ///
     /// [`Rejected::NotLevels`] for an alternate start code, and
     /// [`Rejected::TooManySources`] for a new source past the limit; in
     /// either case the merge is unchanged.
-    pub fn update(&mut self, source: SourceId, frame: &Frame<'_>) -> Result<(), Rejected> {
+    pub fn update_at(
+        &mut self,
+        source: SourceId,
+        priority: u8,
+        frame: &Frame<'_>,
+    ) -> Result<(), Rejected> {
         if !frame.start_code().is_null() {
             return Err(Rejected::NotLevels(frame.start_code()));
         }
@@ -131,6 +132,7 @@ impl Merge {
             None => {
                 self.inputs.push(Input {
                     source,
+                    priority,
                     levels: [0; SLOTS],
                     len: 0,
                     changed: [0; SLOTS],
@@ -143,6 +145,7 @@ impl Merge {
         let Some(input) = self.inputs.get_mut(at) else {
             return Ok(());
         };
+        input.priority = priority;
         let slots = frame.slots();
         let fresh = input.len;
         for (i, ((level, changed), &new)) in input
@@ -167,31 +170,5 @@ impl Merge {
         let before = self.inputs.len();
         self.inputs.retain(|i| i.source != source);
         self.inputs.len() != before
-    }
-
-    /// Writes the merged levels into `universe`, its length the longest
-    /// source's. With no sources, the universe goes dark at its current
-    /// length. Returns whether the universe changed.
-    pub fn render(&self, universe: &mut Universe) -> bool {
-        if self.inputs.is_empty() {
-            return universe.blackout();
-        }
-        let len = self.inputs.iter().map(|i| i.len).max().unwrap_or(0);
-        let mut out = [0u8; SLOTS];
-        for (slot, level) in out.iter_mut().enumerate().take(len) {
-            let carrying = self.inputs.iter().filter(|i| slot < i.len);
-            *level = match self.mode {
-                Mode::Htp => carrying
-                    .filter_map(|i| i.levels.get(slot))
-                    .max()
-                    .copied()
-                    .unwrap_or(0),
-                Mode::Ltp => carrying
-                    .filter_map(|i| Some((i.changed.get(slot)?, i.levels.get(slot)?)))
-                    .max_by_key(|(changed, _)| **changed)
-                    .map_or(0, |(_, l)| *l),
-            };
-        }
-        universe.replace(&out, u16::try_from(len).unwrap_or(512))
     }
 }

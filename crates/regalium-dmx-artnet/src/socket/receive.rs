@@ -110,11 +110,7 @@ impl ArtNet {
             *to = *from;
             len += 1;
         }
-        Some(Received {
-            universe: port.into(),
-            source,
-            len,
-        })
+        Some(Received::new(port.into(), source, len))
     }
 
     /// Answers a poll, unicast to the poller, as a controller with no ports.

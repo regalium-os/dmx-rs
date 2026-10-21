@@ -26,28 +26,19 @@
 //! timing rather than sharing an executor with whatever else the caller runs.
 
 use crate::frame::Frame;
-use crate::merge::SourceId;
 use crate::refresh::Refresh;
 use core::time::Duration;
-use std::sync::Arc;
+
+mod received;
+mod shared;
+
+pub use received::Received;
 
 /// How long a merge source may be silent before it is dropped, unless a
 /// transport says otherwise: the ten seconds after which Art-Net 4 cancels
 /// a merge. sACN's network data loss timeout is shorter, and its transport
 /// overrides this.
 pub const SOURCE_TIMEOUT: Duration = Duration::from_secs(10);
-
-/// A frame that arrived: for which universe, from whom, and how many octets
-/// of the caller's buffer it fills — start code and slots, header removed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct Received {
-    /// The universe, as this transport's protocol numbers it.
-    pub universe: u32,
-    /// The source, as the merge will know it.
-    pub source: SourceId,
-    /// Octets written to the buffer, ready for [`Frame::decode`].
-    pub len: usize,
-}
 
 /// A transport: one way of carrying DMX512 frames.
 ///
@@ -76,6 +67,41 @@ pub trait Transport {
         SOURCE_TIMEOUT
     }
 
+    /// Starts receiving `universe`, as sACN joins its multicast group. The
+    /// runtime calls it when an input listens to the universe; a transport
+    /// that receives everything anyway leaves the default, which does
+    /// nothing.
+    ///
+    /// # Errors
+    ///
+    /// When the transport could not arrange to receive it.
+    fn join(&self, universe: u32) -> Result<(), Self::Error> {
+        let _ = universe;
+        Ok(())
+    }
+
+    /// Stops receiving `universe`; the opposite of [`Transport::join`].
+    ///
+    /// # Errors
+    ///
+    /// When the transport itself failed.
+    fn leave(&self, universe: u32) -> Result<(), Self::Error> {
+        let _ = universe;
+        Ok(())
+    }
+
+    /// Says `universe` will not be sent again, as sACN's stream-terminated
+    /// packets do, so receivers drop this source at once rather than after
+    /// their timeout. The runtime calls it on unpatch and on close.
+    ///
+    /// # Errors
+    ///
+    /// When the transport itself failed.
+    fn end(&self, universe: u32) -> Result<(), Self::Error> {
+        let _ = universe;
+        Ok(())
+    }
+
     /// Sends `frame` as universe `universe`, numbered as this protocol
     /// numbers universes.
     ///
@@ -93,30 +119,4 @@ pub trait Transport {
     ///
     /// When the transport itself failed.
     fn receive(&self, buf: &mut [u8], timeout: Duration) -> Result<Option<Received>, Self::Error>;
-}
-
-/// A shared transport is a transport, so one socket can feed an output and
-/// an input at once: each holds an `Arc` of it.
-impl<T: Transport + ?Sized> Transport for Arc<T> {
-    type Error = T::Error;
-
-    fn protocol(&self) -> &'static str {
-        (**self).protocol()
-    }
-
-    fn refresh(&self) -> Refresh {
-        (**self).refresh()
-    }
-
-    fn source_timeout(&self) -> Duration {
-        (**self).source_timeout()
-    }
-
-    fn send(&self, universe: u32, frame: &Frame<'_>) -> Result<(), Self::Error> {
-        (**self).send(universe, frame)
-    }
-
-    fn receive(&self, buf: &mut [u8], timeout: Duration) -> Result<Option<Received>, Self::Error> {
-        (**self).receive(buf, timeout)
-    }
 }

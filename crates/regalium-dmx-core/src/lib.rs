@@ -19,7 +19,7 @@
 //! | [`start_code`] | the start code, null and alternate |
 //! | [`frame`] | E1.11 packets: a start code and up to 512 slots, lossless |
 //! | [`universe`] | a universe's levels, sent length and change generation |
-//! | [`merge`] | HTP and LTP merging of several sources into one universe |
+//! | [`merge`] | priority, then HTP or LTP, merging sources into one universe |
 //! | [`error`] | decode errors that borrow the octets, and refused changes |
 //! | [`refresh`] | when to send a universe: the refresh policy as a state machine |
 //! | [`transport`] | the trait every transport satisfies |
@@ -46,9 +46,9 @@
 //!
 //! # State
 //!
-//! Phase 3: [`address`], [`start_code`], [`frame`], [`universe`], [`merge`],
-//! [`error`], [`refresh`] and [`transport`] are built, with the first fixture
-//! corpus under `fixtures/`.
+//! Phase 5: [`address`], [`start_code`], [`frame`], [`universe`], [`merge`]
+//! with priority, [`error`], [`refresh`] and [`transport`] are built, with
+//! the first fixture corpus under `fixtures/`.
 
 pub mod address;
 pub mod error;

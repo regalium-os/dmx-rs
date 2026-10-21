@@ -112,6 +112,11 @@ fn unpatching_stops_the_universe_and_an_empty_output_has_no_deadline() {
     assert!(!output.unpatch(1));
     assert_eq!(output.step(), None);
     assert_eq!(wire.sent().len(), 1);
+    assert_eq!(
+        *wire.ended.lock().unwrap(),
+        [1],
+        "ended once, on the unpatch"
+    );
 }
 
 #[test]
