@@ -51,27 +51,37 @@ pub(super) fn start(
     let mut backup_running = Some(backup.start()?);
 
     let (stop, unplugged) = (Arc::clone(stop), Arc::clone(unplugged));
-    let thread = std::thread::Builder::new().name("dmx-demo".into()).spawn(move || {
-        let started = Instant::now();
-        let mut step = 0usize;
-        while !stop.load(Ordering::Acquire) {
-            std::thread::sleep(Duration::from_millis(100));
-            let t = started.elapsed();
-            // A chase on the FOH console's first 24 slots.
-            step = step.wrapping_add(1);
-            let chase: Vec<u8> = (0..24).map(|i| if (i + step / 2) % 8 == 0 { 255 } else { 40 }).collect();
-            let _ = foh_levels.write(Address::FIRST, &chase);
-            if t >= BACKUP_FOR {
-                if let Some(mut running) = backup_running.take() {
+    let thread = std::thread::Builder::new()
+        .name("dmx-demo".into())
+        .spawn(move || {
+            let started = Instant::now();
+            let mut beat = 0usize;
+            while !stop.load(Ordering::Acquire) {
+                std::thread::sleep(Duration::from_millis(100));
+                let t = started.elapsed();
+                // A chase on the FOH console's first 24 slots.
+                beat = beat.wrapping_add(1);
+                let chase: Vec<u8> = (0..24)
+                    .map(|i| {
+                        if (i + beat / 2).is_multiple_of(8) {
+                            255
+                        } else {
+                            40
+                        }
+                    })
+                    .collect();
+                let _ = foh_levels.write(Address::FIRST, &chase);
+                if t >= BACKUP_FOR
+                    && let Some(mut running) = backup_running.take()
+                {
                     running.close();
                 }
+                // The widget is out for ten seconds in every forty, after thirty.
+                let cycle = t.as_secs() % 40;
+                unplugged.store(t.as_secs() >= 30 && cycle >= 30, Ordering::Relaxed);
             }
-            // The widget is out for ten seconds in every forty, after thirty.
-            let cycle = t.as_secs() % 40;
-            unplugged.store(t.as_secs() >= 30 && cycle >= 30, Ordering::Relaxed);
-        }
-        foh_running.close();
-    })?;
+            foh_running.close();
+        })?;
     Ok(vec![thread])
 }
 
@@ -103,14 +113,24 @@ fn announce(capture: &Capture) {
     let mut out = Vec::new();
     ArtPoll::new().encode(&mut out);
     capture.record(true, Protocol::ArtNet, "10.0.0.255", &out, false);
-    for (ip, short, long) in [([10, 0, 0, 5], "Node A", "Stage left dimmers"), ([10, 0, 0, 6], "Truss 2", "Truss 2 movers"), ([10, 0, 0, 9], "Desk", "Lighting desk")] {
+    for (ip, short, long) in [
+        ([10, 0, 0, 5], "Node A", "Stage left dimmers"),
+        ([10, 0, 0, 6], "Truss 2", "Truss 2 movers"),
+        ([10, 0, 0, 9], "Desk", "Lighting desk"),
+    ] {
         let mut reply = Reply::controller(Ipv4Addr::from(ip));
         reply.style = ST_NODE;
         reply.short_name = name(short, 18);
         reply.long_name = name(long, 64);
         out.clear();
         reply.encode(&mut out);
-        capture.record(false, Protocol::ArtNet, &format!("{}.{}.{}.{}", ip[0], ip[1], ip[2], ip[3]), &out, false);
+        capture.record(
+            false,
+            Protocol::ArtNet,
+            &format!("{}.{}.{}.{}", ip[0], ip[1], ip[2], ip[3]),
+            &out,
+            false,
+        );
     }
     let mut universes = Vec::new();
     list(&[1, 7], &mut universes);
@@ -119,6 +139,14 @@ fn announce(capture: &Capture) {
         *to = *from;
     }
     out.clear();
-    DiscoveryPacket { cid: Cid([0x5a; 16]), source_name: &padded, reserved: [0; 4], page: 0, last_page: 0, list: &universes }.encode(&mut out);
+    DiscoveryPacket {
+        cid: Cid([0x5a; 16]),
+        source_name: &padded,
+        reserved: [0; 4],
+        page: 0,
+        last_page: 0,
+        list: &universes,
+    }
+    .encode(&mut out);
     capture.record(false, Protocol::Sacn, "10.0.0.20", &out, false);
 }

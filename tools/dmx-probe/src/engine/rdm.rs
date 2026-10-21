@@ -45,7 +45,9 @@ where
     C: Clock,
 {
     fn discover(&self, universe: u32) -> Result<Vec<Uid>, String> {
-        Controller::discover(self, universe).map(|d| d.devices).map_err(|e| e.to_string())
+        Controller::discover(self, universe)
+            .map(|d| d.devices)
+            .map_err(|e| e.to_string())
     }
 
     fn info(&self, universe: u32, uid: Uid) -> Result<DeviceInfo, String> {
@@ -53,11 +55,15 @@ where
     }
 
     fn label(&self, universe: u32, uid: Uid) -> String {
-        self.get(universe, uid, Pid::DEVICE_LABEL).map(|d| String::from_utf8_lossy(&d).into_owned()).unwrap_or_default()
+        self.get(universe, uid, Pid::DEVICE_LABEL)
+            .map(|d| String::from_utf8_lossy(&d).into_owned())
+            .unwrap_or_default()
     }
 
     fn set(&self, universe: u32, uid: Uid, pid: Pid, data: &[u8]) -> Result<(), String> {
-        Controller::set(self, universe, uid, pid, data).map(|_| ()).map_err(|e| e.to_string())
+        Controller::set(self, universe, uid, pid, data)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 }
 
@@ -69,7 +75,11 @@ pub(crate) fn device(universe: &str, uid: Uid, info: &DeviceInfo, label: String)
         uid: uid.to_string(),
         label,
         model: format!("{:#06x}", info.model),
-        address: if (1..=512).contains(&info.start_address) { info.start_address } else { 0 },
+        address: if (1..=512).contains(&info.start_address) {
+            info.start_address
+        } else {
+            0
+        },
         footprint: info.footprint,
         personality: format!("{}/{}", info.personality, info.personalities),
         responding: true,

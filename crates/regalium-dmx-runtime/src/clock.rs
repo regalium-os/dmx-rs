@@ -137,7 +137,8 @@ impl Clock for SystemClock {
             // How late the timed wait came back: learnt an eighth at a time.
             let late = self.now().saturating_sub(early).min(MAX_SLACK);
             let learnt = (slack.as_nanos() * 7 + late.as_nanos()) / 8;
-            self.slack_ns.store(u64::try_from(learnt).unwrap_or(u64::MAX), Ordering::Relaxed);
+            self.slack_ns
+                .store(u64::try_from(learnt).unwrap_or(u64::MAX), Ordering::Relaxed);
         }
         while self.now() < deadline {
             if wake.take() {

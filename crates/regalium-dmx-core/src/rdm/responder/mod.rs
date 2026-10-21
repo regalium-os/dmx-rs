@@ -62,6 +62,17 @@ impl Responder {
         }
     }
 
+    /// Labelled `label`, as `DEVICE_LABEL` answers; cut to its 32 octets.
+    #[must_use]
+    pub fn labelled(mut self, label: &str) -> Self {
+        self.label = label
+            .as_bytes()
+            .get(..32)
+            .unwrap_or(label.as_bytes())
+            .to_vec();
+        self
+    }
+
     /// Answers `pid` with `ACK_TIMER` first, queuing the real answer.
     #[must_use]
     pub const fn slow(mut self, pid: Pid) -> Self {

@@ -14,7 +14,10 @@ fn main() {
     if let Some(m) = engine.model() {
         for u in m.universes.iter().take(2) {
             let mean = u.intervals.iter().sum::<f32>() / u.intervals.len().max(1) as f32;
-            println!("{}: {:.1} fps, mean {:.2} ms, histogram {:?}", u.name, u.fps, mean, u.histogram);
+            println!(
+                "{}: {:.1} fps, mean {:.2} ms, histogram {:?}",
+                u.name, u.fps, mean, u.histogram
+            );
         }
     }
 }

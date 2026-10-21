@@ -13,8 +13,8 @@ mod apply;
 mod capture;
 mod command;
 pub mod model;
-mod rdm;
 pub mod patch;
+mod rdm;
 mod snapshot;
 mod stats;
 
@@ -96,8 +96,14 @@ impl Engine {
     pub fn start(rig: Rig) -> std::io::Result<Self> {
         let (commands, inbox) = mpsc::channel();
         let (publish, models) = mpsc::channel();
-        std::thread::Builder::new().name("dmx-engine".into()).spawn(move || Worker::new(rig).run(&inbox, &publish))?;
-        Ok(Self { commands, models, latest: None })
+        std::thread::Builder::new()
+            .name("dmx-engine".into())
+            .spawn(move || Worker::new(rig).run(&inbox, &publish))?;
+        Ok(Self {
+            commands,
+            models,
+            latest: None,
+        })
     }
 
     /// Asks for `command`. Never blocks.
@@ -116,8 +122,17 @@ impl Engine {
 
 /// What finished on an RDM thread.
 pub(crate) enum Done {
-    Found { universe: String, devices: Vec<Device>, line: String },
-    Changed { universe: String, device: Option<Device>, line: String, ok: bool },
+    Found {
+        universe: String,
+        devices: Vec<Device>,
+        line: String,
+    },
+    Changed {
+        universe: String,
+        device: Option<Device>,
+        line: String,
+        ok: bool,
+    },
 }
 
 /// The worker: the rig, and what it has learnt.
@@ -133,7 +148,14 @@ pub(crate) struct Worker {
 
 impl Worker {
     fn new(rig: Rig) -> Self {
-        Self { rig, devices: Vec::new(), feed: VecDeque::new(), discovery: None, failing: HashSet::new(), done: mpsc::channel() }
+        Self {
+            rig,
+            devices: Vec::new(),
+            feed: VecDeque::new(),
+            discovery: None,
+            failing: HashSet::new(),
+            done: mpsc::channel(),
+        }
     }
 
     /// Until the surface goes away.

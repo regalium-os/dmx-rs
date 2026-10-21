@@ -192,6 +192,8 @@ pub struct Model {
     pub events: VecDeque<Event>,
     /// Newest last, at most [`PACKETS`].
     pub packets: VecDeque<Packet>,
+    /// Level packets counted, not kept.
+    pub level_packets: u64,
     /// An RDM search in progress or just finished, as one line.
     pub discovery: Option<String>,
     /// What the probe is attached to: `demo rig`, `0.0.0.0`.

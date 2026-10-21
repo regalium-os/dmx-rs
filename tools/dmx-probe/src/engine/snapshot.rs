@@ -12,7 +12,10 @@ const SPARK: usize = 40;
 impl Worker {
     pub(crate) fn snapshot(&self) -> Model {
         let universes = self.rig.entries.iter().map(|e| {
-            let (fps, intervals, histogram) = self.rig.stats.of(e.protocol.name(), i64::from(e.number), SPARK);
+            let (fps, intervals, histogram) =
+                self.rig
+                    .stats
+                    .of(e.protocol.name(), i64::from(e.number), SPARK);
             let (levels, generation, sources) = match (&e.levels, &e.merged) {
                 (Some(l), _) => {
                     let u = l.snapshot();
@@ -23,7 +26,11 @@ impl Worker {
                     let sources = m
                         .source_list()
                         .into_iter()
-                        .map(|(id, priority, merged)| Source { id: format!("{:x}", id.0), priority, merged })
+                        .map(|(id, priority, merged)| Source {
+                            id: format!("{:x}", id.0),
+                            priority,
+                            merged,
+                        })
                         .collect();
                     (u.levels().to_vec(), u.generation(), sources)
                 }
@@ -58,10 +65,15 @@ impl Worker {
             universes: universes.collect(),
             nodes: self.rig.nodes.clone(),
             devices: self.devices.clone(),
-            policy: model::Policy { blackout: rules.blackout, hold: rules.hold, master: rules.master },
+            policy: model::Policy {
+                blackout: rules.blackout,
+                hold: rules.hold,
+                master: rules.master,
+            },
             mcp_writes: false,
             events: self.feed.clone(),
             packets: self.rig.capture.packets(),
+            level_packets: self.rig.capture.level_packets(),
             discovery: self.discovery.clone(),
             attached: self.rig.attached.clone(),
         }

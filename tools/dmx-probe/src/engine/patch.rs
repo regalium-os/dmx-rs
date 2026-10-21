@@ -24,7 +24,11 @@ pub fn owners<'a>(devices: impl IntoIterator<Item = &'a Device>) -> [u8; 513] {
 /// 512. Empty for a device with no address or no footprint.
 pub fn span(device: &Device) -> impl Iterator<Item = u16> {
     let start = device.address;
-    let end = if start == 0 { 0 } else { start.saturating_add(device.footprint).min(513) };
+    let end = if start == 0 {
+        0
+    } else {
+        start.saturating_add(device.footprint).min(513)
+    };
     start..end.max(start)
 }
 
@@ -50,18 +54,30 @@ pub fn overlaps(owners: &[u8; 513]) -> Vec<(u16, u16)> {
 /// The first address from which `len` addresses are all free, ignoring the
 /// device being moved (`moving`, its UID).
 #[must_use]
-pub fn first_free<'a>(devices: impl IntoIterator<Item = &'a Device>, moving: &str, len: u16) -> Option<u16> {
+pub fn first_free<'a>(
+    devices: impl IntoIterator<Item = &'a Device>,
+    moving: &str,
+    len: u16,
+) -> Option<u16> {
     let owners = owners(devices.into_iter().filter(|d| d.uid != moving));
     let len = len.max(1);
-    (1..=513u16.saturating_sub(len)).find(|&start| (start..start + len).all(|a| owners.get(usize::from(a)) == Some(&0)))
+    (1..=513u16.saturating_sub(len))
+        .find(|&start| (start..start + len).all(|a| owners.get(usize::from(a)) == Some(&0)))
 }
 
 /// Whether `len` addresses from `start` are free of every device but
 /// `moving`, and inside the universe.
 #[must_use]
-pub fn is_free<'a>(devices: impl IntoIterator<Item = &'a Device>, moving: &str, start: u16, len: u16) -> bool {
+pub fn is_free<'a>(
+    devices: impl IntoIterator<Item = &'a Device>,
+    moving: &str,
+    start: u16,
+    len: u16,
+) -> bool {
     let owners = owners(devices.into_iter().filter(|d| d.uid != moving));
-    start >= 1 && u32::from(start) + u32::from(len.max(1)) <= 513 && (start..start + len.max(1)).all(|a| owners.get(usize::from(a)) == Some(&0))
+    start >= 1
+        && u32::from(start) + u32::from(len.max(1)) <= 513
+        && (start..start + len.max(1)).all(|a| owners.get(usize::from(a)) == Some(&0))
 }
 
 #[cfg(test)]
@@ -70,12 +86,26 @@ mod tests {
     use crate::engine::model::Device;
 
     fn at(uid: &str, address: u16, footprint: u16) -> Device {
-        Device { universe: "u".into(), uid: uid.into(), label: String::new(), model: String::new(), address, footprint, personality: String::new(), responding: true }
+        Device {
+            universe: "u".into(),
+            uid: uid.into(),
+            label: String::new(),
+            model: String::new(),
+            address,
+            footprint,
+            personality: String::new(),
+            responding: true,
+        }
     }
 
     #[test]
     fn an_overlap_is_every_run_claimed_twice() {
-        let rig = [at("a", 97, 16), at("b", 97, 4), at("c", 200, 10), at("d", 205, 10)];
+        let rig = [
+            at("a", 97, 16),
+            at("b", 97, 4),
+            at("c", 200, 10),
+            at("d", 205, 10),
+        ];
         assert_eq!(overlaps(&owners(&rig)), [(97, 100), (205, 209)]);
         assert_eq!(overlaps(&owners(&[at("a", 1, 512)])), []);
     }
@@ -92,7 +122,20 @@ mod tests {
 
     #[test]
     fn a_device_without_an_address_claims_nothing() {
-        assert_eq!(owners(&[at("a", 0, 16)]).iter().map(|&n| u32::from(n)).sum::<u32>(), 0);
-        assert_eq!(owners(&[at("a", 510, 16)]).iter().map(|&n| u32::from(n)).sum::<u32>(), 3, "cut at 512");
+        assert_eq!(
+            owners(&[at("a", 0, 16)])
+                .iter()
+                .map(|&n| u32::from(n))
+                .sum::<u32>(),
+            0
+        );
+        assert_eq!(
+            owners(&[at("a", 510, 16)])
+                .iter()
+                .map(|&n| u32::from(n))
+                .sum::<u32>(),
+            3,
+            "cut at 512"
+        );
     }
 }

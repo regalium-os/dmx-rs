@@ -68,9 +68,19 @@ pub struct Port {
 impl Bus {
     /// A port for `protocol`, sending as `source` at `priority`, recording on
     /// `capture` as going to `peer`.
-    pub fn port(self: &Arc<Self>, protocol: Protocol, source: u64, priority: u8, capture: &Arc<Capture>, peer: &str) -> Port {
+    pub fn port(
+        self: &Arc<Self>,
+        protocol: Protocol,
+        source: u64,
+        priority: u8,
+        capture: &Arc<Capture>,
+        peer: &str,
+    ) -> Port {
         let mut inboxes = self.inboxes.lock().unwrap_or_else(PoisonError::into_inner);
-        inboxes.push(Inbox { protocol: protocol.name(), queue: VecDeque::new() });
+        inboxes.push(Inbox {
+            protocol: protocol.name(),
+            queue: VecDeque::new(),
+        });
         // Art-Net streamed at full rate, as many consoles send it; sACN on
         // change and kept alive, as the driver's own transport does; the
         // line continuously, as a line must be.
@@ -116,15 +126,22 @@ impl Transport for Port {
         }
         let mut octets = Vec::with_capacity(513);
         frame.encode(&mut octets);
-        self.capture.record(true, self.protocol, &self.peer, &octets, true);
-        let mut inboxes = self.bus.inboxes.lock().unwrap_or_else(PoisonError::into_inner);
+        self.capture
+            .record(true, self.protocol, &self.peer, &octets, true);
+        let mut inboxes = self
+            .bus
+            .inboxes
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
         let name = self.protocol.name();
         for (at, inbox) in inboxes.iter_mut().enumerate() {
             if at != self.at && inbox.protocol == name {
                 if inbox.queue.len() == QUEUE {
                     inbox.queue.pop_front();
                 }
-                inbox.queue.push_back((universe, self.source, self.priority, octets.clone()));
+                inbox
+                    .queue
+                    .push_back((universe, self.source, self.priority, octets.clone()));
             }
         }
         self.bus.arrived.notify_all();
@@ -132,13 +149,21 @@ impl Transport for Port {
     }
 
     fn receive(&self, buf: &mut [u8], timeout: Duration) -> Result<Option<Received>, Unplugged> {
-        let inboxes = self.bus.inboxes.lock().unwrap_or_else(PoisonError::into_inner);
+        let inboxes = self
+            .bus
+            .inboxes
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
         let (mut inboxes, _) = self
             .bus
             .arrived
-            .wait_timeout_while(inboxes, timeout, |i| i.get(self.at).is_none_or(|b| b.queue.is_empty()))
+            .wait_timeout_while(inboxes, timeout, |i| {
+                i.get(self.at).is_none_or(|b| b.queue.is_empty())
+            })
             .unwrap_or_else(PoisonError::into_inner);
-        let Some((universe, source, priority, octets)) = inboxes.get_mut(self.at).and_then(|b| b.queue.pop_front()) else {
+        let Some((universe, source, priority, octets)) =
+            inboxes.get_mut(self.at).and_then(|b| b.queue.pop_front())
+        else {
             return Ok(None);
         };
         let mut len = 0;
@@ -146,6 +171,8 @@ impl Transport for Port {
             *to = *from;
             len += 1;
         }
-        Ok(Some(Received::new(universe, source, len).priority(priority)))
+        Ok(Some(
+            Received::new(universe, source, len).priority(priority),
+        ))
     }
 }

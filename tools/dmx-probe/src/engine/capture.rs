@@ -32,7 +32,11 @@ impl Capture {
     /// Empty, its clock starting now.
     #[must_use]
     pub fn new() -> Self {
-        Self { start: Instant::now(), kept: Mutex::new(VecDeque::new()), levels: AtomicU64::new(0) }
+        Self {
+            start: Instant::now(),
+            kept: Mutex::new(VecDeque::new()),
+            levels: AtomicU64::new(0),
+        }
     }
 
     /// Records a packet. `levels` marks one of the many that only carry
@@ -42,7 +46,13 @@ impl Capture {
             self.levels.fetch_add(1, Ordering::Relaxed);
             return;
         }
-        let packet = Packet { time: self.time(), sent, protocol, peer: peer.to_owned(), octets: octets.to_vec() };
+        let packet = Packet {
+            time: self.time(),
+            sent,
+            protocol,
+            peer: peer.to_owned(),
+            octets: octets.to_vec(),
+        };
         let mut kept = self.kept.lock().unwrap_or_else(PoisonError::into_inner);
         if kept.len() == PACKETS {
             kept.pop_front();
@@ -53,7 +63,10 @@ impl Capture {
     /// Everything kept, oldest first.
     #[must_use]
     pub fn packets(&self) -> VecDeque<Packet> {
-        self.kept.lock().unwrap_or_else(PoisonError::into_inner).clone()
+        self.kept
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
     }
 
     /// Level packets counted so far.
@@ -67,6 +80,12 @@ impl Capture {
     pub fn time(&self) -> String {
         let t = self.start.elapsed();
         let s = t.as_secs();
-        format!("{:02}:{:02}:{:02}.{:03}", s / 3600, (s / 60) % 60, s % 60, t.subsec_millis())
+        format!(
+            "{:02}:{:02}:{:02}.{:03}",
+            s / 3600,
+            (s / 60) % 60,
+            s % 60,
+            t.subsec_millis()
+        )
     }
 }

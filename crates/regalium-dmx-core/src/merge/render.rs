@@ -19,7 +19,9 @@ impl Merge {
     /// highest priority present) or held.
     pub fn list(&self) -> impl Iterator<Item = (super::SourceId, u8, bool)> + '_ {
         let top = self.priority().unwrap_or(0);
-        self.inputs.iter().map(move |i| (i.source, i.priority, i.priority == top))
+        self.inputs
+            .iter()
+            .map(move |i| (i.source, i.priority, i.priority == top))
     }
 
     /// How many sources are at the highest priority, and so merged; the

@@ -26,7 +26,11 @@ pub struct Field {
 
 impl Field {
     pub(crate) fn new(depth: u8, text: impl Into<String>, span: Option<(usize, usize)>) -> Self {
-        Self { depth, text: text.into(), span }
+        Self {
+            depth,
+            text: text.into(),
+            span,
+        }
     }
 }
 
@@ -60,17 +64,40 @@ fn line(octets: &[u8]) -> Dissection {
         Some(&code) => Dissection {
             summary: format!("DMX512 · start {code:#04x} · {} slots", octets.len() - 1),
             levels: code == 0,
-            tree: vec![Field::new(0, format!("DMX512 · start code {code:#04x}"), Some((0, 0))), Field::new(1, format!("{} slots", octets.len() - 1), Some((1, octets.len().saturating_sub(1))))],
+            tree: vec![
+                Field::new(0, format!("DMX512 · start code {code:#04x}"), Some((0, 0))),
+                Field::new(
+                    1,
+                    format!("{} slots", octets.len() - 1),
+                    Some((1, octets.len().saturating_sub(1))),
+                ),
+            ],
         },
-        None => Dissection { summary: "empty".to_owned(), levels: false, tree: Vec::new() },
+        None => Dissection {
+            summary: "empty".to_owned(),
+            levels: false,
+            tree: Vec::new(),
+        },
     }
 }
 
 /// A refusal, as the tree shows it.
-pub(crate) fn refused(what: &str, error: &dyn std::fmt::Display, offset: usize, len: usize) -> Dissection {
+pub(crate) fn refused(
+    what: &str,
+    error: &dyn std::fmt::Display,
+    offset: usize,
+    len: usize,
+) -> Dissection {
     Dissection {
         summary: format!("{what} · malformed: {error}"),
         levels: false,
-        tree: vec![Field::new(0, format!("{what} · refused"), None), Field::new(1, error.to_string(), Some((offset, len.saturating_sub(1).max(offset))))],
+        tree: vec![
+            Field::new(0, format!("{what} · refused"), None),
+            Field::new(
+                1,
+                error.to_string(),
+                Some((offset, len.saturating_sub(1).max(offset))),
+            ),
+        ],
     }
 }
