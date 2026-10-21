@@ -1,0 +1,40 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.universe.v1;
+
+option java_multiple_files = true;
+option java_outer_classname = "EnumsProto";
+option java_package = "dev.regalium.dmx.universe.v1";
+
+// How a merged universe combines its sources, slot by slot, among those at
+// the highest priority present.
+enum MergeMode {
+  // Default, unused.
+  MERGE_MODE_UNSPECIFIED = 0;
+
+  // Highest takes precedence: each slot is the highest level any source
+  // sends. Right for intensities.
+  MERGE_MODE_HTP = 1;
+
+  // Latest takes precedence: each slot follows the source that last
+  // changed it.
+  MERGE_MODE_LTP = 2;
+}
+
+// What a universe is doing now.
+enum UniverseState {
+  // Default, unused.
+  UNIVERSE_STATE_UNSPECIFIED = 0;
+
+  // Sending or receiving.
+  UNIVERSE_STATE_LIVE = 1;
+
+  // An input with no sources: nothing is being received.
+  UNIVERSE_STATE_IDLE = 2;
+
+  // Its transport is failing; the server keeps trying.
+  UNIVERSE_STATE_FAILING = 3;
+}

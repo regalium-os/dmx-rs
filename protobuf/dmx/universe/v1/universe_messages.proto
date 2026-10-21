@@ -1,0 +1,127 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.universe.v1;
+
+import "buf/validate/validate.proto";
+import "dmx/universe/v1/universe.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/field_mask.proto";
+import "mcp/v1/annotations.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "UniverseMessagesProto";
+option java_package = "dev.regalium.dmx.universe.v1";
+
+// Request message for UniverseService.CreateUniverse.
+message CreateUniverseRequest {
+  // The universe to create: its protocol, number, and output or input.
+  Universe universe = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to give it, which becomes the last part of its name: lower
+  // case, digits and hyphens, starting with a letter.
+  string universe_id = 2 [
+    (mcp.v1.field) = {
+      description: "The new universe's ID: lower case, digits and hyphens, starting with a letter."
+      examples: "stage-left"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.pattern = "^[a-z][a-z0-9-]{0,62}$"
+  ];
+}
+
+// Request message for UniverseService.GetUniverse.
+message GetUniverseRequest {
+  // The universe to read.
+  // Format: universes/{universe}
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "The universe, as list_universes names it."
+      examples: "universes/stage-left"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Universe"
+  ];
+}
+
+// Request message for UniverseService.ListUniverses.
+message ListUniversesRequest {
+  // Maximum number of universes to return; zero selects a default.
+  int32 page_size = 1 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).int32 = {
+      gte: 0
+      lte: 1000
+    }
+  ];
+
+  // A page token from a previous ListUniverses call.
+  string page_token = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Filter expression, AIP-160: `protocol = PROTOCOL_SACN`, or
+  // `state = UNIVERSE_STATE_FAILING`.
+  string filter = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Sort order, AIP-132. Defaults to name ascending.
+  string order_by = 4 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for UniverseService.ListUniverses.
+message ListUniversesResponse {
+  // The universes.
+  repeated Universe universes = 1;
+
+  // Pass to the next ListUniverses call; empty when there are no more.
+  string next_page_token = 2;
+}
+
+// Request message for UniverseService.UpdateUniverse.
+message UpdateUniverseRequest {
+  // The universe to update. Its name field identifies which.
+  Universe universe = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Fields to change: display_name, and the output's refresh and priority
+  // or the input's merge mode and source limit. Protocol, number and node
+  // are fixed: a different one is a different universe.
+  google.protobuf.FieldMask update_mask = 2 [
+    (mcp.v1.field) = {
+      description: "Which fields to change."
+      examples: "display_name"
+      examples: "input.merge_mode"
+    },
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}
+
+// Request message for UniverseService.DeleteUniverse.
+message DeleteUniverseRequest {
+  // The universe to stop. An sACN output tells its receivers it has
+  // stopped; on other protocols receivers time it out.
+  // Format: universes/{universe}
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "The universe to stop, as list_universes names it."
+      examples: "universes/stage-left"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Universe"
+  ];
+}
+
+// Request message for UniverseService.BlackoutUniverse.
+message BlackoutUniverseRequest {
+  // The output universe to take dark: every slot to 0, at its current
+  // length.
+  // Format: universes/{universe}
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "The output universe to take dark."
+      examples: "universes/stage-left"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Universe"
+  ];
+}

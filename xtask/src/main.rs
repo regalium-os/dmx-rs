@@ -1,7 +1,9 @@
 // Copyright 2026 RegaliumOS™.
 // SPDX-License-Identifier: Apache-2.0
 
-//! `cargo xtask <gate>` — the conformance gates.
+//! `cargo xtask <gate>` — the conformance gates; and
+//! `cargo xtask summarise-openapi`, the step `just gen-openapi` runs after
+//! the generator, whose output the `openapi` gate checks.
 //!
 //! Run them all with `just gates`. Each prints what it examined, because a
 //! gate that reports success without saying how much it looked at is a gate
@@ -20,6 +22,18 @@ fn main() -> ExitCode {
     };
 
     let requested: Vec<String> = std::env::args().skip(1).collect();
+    if requested.first().map(String::as_str) == Some("summarise-openapi") {
+        return match xtask::openapi::write(&root) {
+            Ok(summary) => {
+                println!("{summary}");
+                ExitCode::SUCCESS
+            }
+            Err(message) => {
+                eprintln!("error: {message}");
+                ExitCode::FAILURE
+            }
+        };
+    }
     let wanted: Vec<&str> = match requested.first().map(String::as_str) {
         None | Some("all") => GATES.iter().map(|(name, _)| *name).collect(),
         Some(name) => vec![name],

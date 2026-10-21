@@ -1,0 +1,57 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.server.v1;
+
+import "dmx/server/v1/policy.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/field_mask.proto";
+import "mcp/v1/annotations.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "ServerMessagesProto";
+option java_package = "dev.regalium.dmx.server.v1";
+
+// Request message for ServerService.GetPolicy.
+message GetPolicyRequest {
+  // The policy: always `policy`.
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "Always policy."
+      examples: "policy"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Policy"
+  ];
+}
+
+// Request message for ServerService.UpdatePolicy.
+message UpdatePolicyRequest {
+  // The policy, as it should be. Its name is always `policy`.
+  Policy policy = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Fields to change: blackout, hold, master.
+  google.protobuf.FieldMask update_mask = 2 [
+    (mcp.v1.field) = {
+      description: "Which of blackout, hold and master to change."
+      examples: "blackout"
+    },
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}
+
+// Request message for ServerService.GetServerStatus.
+message GetServerStatusRequest {
+  // The status: always `serverStatus`.
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "Always serverStatus."
+      examples: "serverStatus"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/ServerStatus"
+  ];
+}

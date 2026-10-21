@@ -1,0 +1,45 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.rdm.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "ParameterProto";
+option java_package = "dev.regalium.dmx.rdm.v1";
+
+// A Parameter is one RDM parameter of a device, read and written as the
+// octets E1.20 or the manufacturer defines: the way to every PID that
+// Device does not name.
+//
+// The ID is the standard's name in lower case with hyphens,
+// `dmx-start-address`, `sensor-value`, or `pid-` and four hexadecimal
+// digits for any other, `pid-8123`.
+message Parameter {
+  option (google.api.resource) = {
+    type: "dmx.regalium.dev/Parameter"
+    pattern: "universes/{universe}/devices/{device}/parameters/{parameter}"
+    singular: "parameter"
+    plural: "parameters"
+  };
+
+  // The parameter's name.
+  // Format: universes/{universe}/devices/{device}/parameters/{parameter}
+  string name = 1 [
+    (google.api.field_behavior) = IDENTIFIER,
+    (buf.validate.field).string.pattern = "^universes/[a-z][a-z0-9-]{0,62}/devices/[0-9a-f]{4}-[0-9a-f]{8}/parameters/[a-z0-9][a-z0-9-]{0,62}$"
+  ];
+
+  // The parameter id.
+  int32 pid = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The parameter data: what a GET answered, or what a SET sends. At most
+  // what fits one RDM message, 231 octets, per write; a read may be longer,
+  // joined from overflow parts.
+  bytes data = 3 [(google.api.field_behavior) = REQUIRED];
+}

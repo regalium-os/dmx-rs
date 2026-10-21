@@ -1,0 +1,72 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.server.v1;
+
+import "dmx/server/v1/policy.proto";
+import "dmx/server/v1/server_messages.proto";
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "mcp/v1/annotations.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "ServerServiceProto";
+option java_package = "dev.regalium.dmx.server.v1";
+
+// ServerService is the server itself: the output policy every write passes
+// through, and the server's status.
+service ServerService {
+  // The default host serving this API.
+  option (google.api.default_host) = "dmx.regalium.dev";
+
+  // Answers are live: no client may share or reuse them.
+  option (mcp.v1.service) = {
+    cache: {scope: MCP_CACHE_SCOPE_PRIVATE}
+  };
+
+  // Reads the output policy: blackout, hold, master, and whether MCP may
+  // write.
+  rpc GetPolicy(GetPolicyRequest) returns (Policy) {
+    option (mcp.v1.tool) = {
+      title: "Get policy"
+      read_only: true
+      open_world: false
+    };
+    option (google.api.http) = {get: "/v1/{name=policy}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Changes the output policy. Blackout and hold act on every output at
+  // once.
+  rpc UpdatePolicy(UpdatePolicyRequest) returns (Policy) {
+    option (mcp.v1.tool) = {
+      title: "Update policy"
+      read_only: false
+      destructive: true
+      idempotent: true
+      open_world: false
+    };
+    option (mcp.v1.elicitation) = {
+      message: "Change the output policy? Blackout, hold and master act on every light this server controls, at once."
+      required: true
+    };
+    option (google.api.http) = {
+      patch: "/v1/{policy.name=policy}"
+      body: "policy"
+    };
+    option (google.api.method_signature) = "policy,update_mask";
+  }
+
+  // Reads the server's status.
+  rpc GetServerStatus(GetServerStatusRequest) returns (ServerStatus) {
+    option (mcp.v1.tool) = {
+      title: "Get server status"
+      read_only: true
+      open_world: false
+    };
+    option (google.api.http) = {get: "/v1/{name=serverStatus}"};
+    option (google.api.method_signature) = "name";
+  }
+}

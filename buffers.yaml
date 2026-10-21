@@ -1,0 +1,42 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# buffers.yaml -- the mirrored schema for the hot-path payload.
+#
+# The .proto tree is the source of truth. This file derives the zero-copy
+# schemas from it rather than anyone keeping a second copy by hand, as
+# bacnet-rs does.
+version: v1
+
+proto:
+  # A descriptor set, not the .proto tree: the protos import googleapis and
+  # protovalidate, and buf has already resolved those.
+  #
+  # Deliberately narrow. `just gen-mirror` builds it with
+  # `--type dmx.universe.v1.StreamLevelsResponse`: a universe's levels, the
+  # payload sent up to 44 times a second per universe to every display
+  # watching. The configuration surface stays protobuf only, where parsing
+  # time never mattered.
+  descriptor_set: protobuf/generated/payloads.descriptor.binpb
+
+out: protobuf/generated
+
+# The ordinal ledger, committed. A slot is a wire format: a consumer compiled
+# when a field sat at ordinal 2 reads slot 2 forever, and none of these
+# formats reports it when a rebuild puts something else there.
+lock: buffers.lock
+
+# A moved ordinal is an error, not a warning.
+strict: ordinal:error
+
+generate:
+  # Schemas only, no language bindings yet: the ledger and the schema
+  # protect the wire format, and bindings would add the capnp and
+  # flatbuffers runtimes to the graph with nothing using them.
+  #
+  # Cap'n Proto: true zero-copy reads.
+  - target: capnp
+
+  # FlatBuffers: the interchange format embedded consoles and visualisers
+  # speak, from the same source.
+  - target: flatbuffers

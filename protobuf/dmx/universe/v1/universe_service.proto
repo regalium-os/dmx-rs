@@ -1,0 +1,198 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.universe.v1;
+
+import "dmx/universe/v1/levels.proto";
+import "dmx/universe/v1/levels_messages.proto";
+import "dmx/universe/v1/universe.proto";
+import "dmx/universe/v1/universe_messages.proto";
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/protobuf/empty.proto";
+import "mcp/v1/annotations.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "UniverseServiceProto";
+option java_package = "dev.regalium.dmx.universe.v1";
+
+// UniverseService patches outputs, listens to inputs, and reads and writes
+// their levels.
+//
+// It is the write-first half of the API: almost every write here moves a
+// light. Each one goes through the server's output policy (see
+// dmx.server.v1.ServerService.GetPolicy), which can hold or black out
+// what is written, and over MCP is refused unless the server was started
+// with --allow-writes.
+service UniverseService {
+  // The default host serving this API.
+  option (google.api.default_host) = "dmx.regalium.dev";
+
+  // Answers are live and rig-specific: no client may share or reuse them.
+  option (mcp.v1.service) = {
+    cache: {scope: MCP_CACHE_SCOPE_PRIVATE}
+  };
+
+  // Creates a universe: patches an output, which starts sending dark at
+  // once, or listens to an input.
+  rpc CreateUniverse(CreateUniverseRequest) returns (Universe) {
+    option (mcp.v1.tool) = {
+      title: "Create universe"
+      read_only: false
+      destructive: false
+      idempotent: false
+      open_world: false
+    };
+    option (mcp.v1.elicitation) = {
+      message: "Create this universe? An output starts sending at once, dark, and takes over whatever else controls those fixtures."
+      required: true
+    };
+    option (google.api.http) = {
+      post: "/v1/universes"
+      body: "universe"
+    };
+    option (google.api.method_signature) = "universe,universe_id";
+  }
+
+  // Reads one universe: its role, state and, for an input, its sources.
+  rpc GetUniverse(GetUniverseRequest) returns (Universe) {
+    option (mcp.v1.tool) = {
+      title: "Get universe"
+      read_only: true
+      open_world: false
+    };
+    option (google.api.http) = {get: "/v1/{name=universes/*}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Lists the universes this server sends and receives.
+  rpc ListUniverses(ListUniversesRequest) returns (ListUniversesResponse) {
+    option (mcp.v1.tool) = {
+      title: "List universes"
+      read_only: true
+      open_world: false
+    };
+    option (google.api.http) = {get: "/v1/universes"};
+  }
+
+  // Changes a universe's label, refresh, priority or merge.
+  rpc UpdateUniverse(UpdateUniverseRequest) returns (Universe) {
+    option (mcp.v1.tool) = {
+      title: "Update universe"
+      read_only: false
+      destructive: false
+      idempotent: true
+      open_world: false
+    };
+    option (google.api.http) = {
+      patch: "/v1/{universe.name=universes/*}"
+      body: "universe"
+    };
+    option (google.api.method_signature) = "universe,update_mask";
+  }
+
+  // Stops a universe. Its fixtures hold their last levels or go dark, as
+  // each is built to when its source goes away.
+  rpc DeleteUniverse(DeleteUniverseRequest) returns (google.protobuf.Empty) {
+    option (mcp.v1.tool) = {
+      title: "Delete universe"
+      read_only: false
+      destructive: true
+      idempotent: true
+      open_world: false
+    };
+    option (mcp.v1.elicitation) = {
+      message: "Stop this universe? Its fixtures lose their source and hold or go dark."
+      required: true
+    };
+    option (google.api.http) = {delete: "/v1/{name=universes/*}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Takes an output universe dark: every slot to 0, at its current length.
+  // GetLevels then reads the zeros.
+  rpc BlackoutUniverse(BlackoutUniverseRequest) returns (Universe) {
+    option (mcp.v1.tool) = {
+      title: "Blackout universe"
+      read_only: false
+      destructive: true
+      idempotent: true
+      open_world: false
+    };
+    option (mcp.v1.elicitation) = {
+      message: "Take every light on this universe dark?"
+      required: true
+    };
+    option (google.api.http) = {
+      post: "/v1/{name=universes/*}:blackout"
+      body: "*"
+    };
+  }
+
+  // Reads a universe's levels as they stand.
+  rpc GetLevels(GetLevelsRequest) returns (Levels) {
+    option (mcp.v1.tool) = {
+      title: "Get levels"
+      read_only: true
+      open_world: false
+    };
+    option (google.api.http) = {get: "/v1/{name=universes/*/levels}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Replaces an output's levels, every slot at once.
+  rpc UpdateLevels(UpdateLevelsRequest) returns (Levels) {
+    option (mcp.v1.tool) = {
+      title: "Update levels"
+      read_only: false
+      destructive: false
+      idempotent: true
+      open_world: false
+    };
+    option (mcp.v1.elicitation) = {
+      message: "Send these levels? Every light on the universe moves to them."
+      required: true
+    };
+    option (google.api.http) = {
+      patch: "/v1/{levels.name=universes/*/levels}"
+      body: "levels"
+    };
+    option (google.api.method_signature) = "levels,update_mask";
+  }
+
+  // Writes a run of an output's levels from one address, the rest
+  // unchanged: what a person means by "channel 101 to full".
+  rpc WriteLevels(WriteLevelsRequest) returns (Levels) {
+    option (mcp.v1.tool) = {
+      title: "Write levels"
+      read_only: false
+      destructive: false
+      idempotent: true
+      open_world: false
+    };
+    option (mcp.v1.elicitation) = {
+      message: "Send these levels? The lights at those addresses move to them."
+      required: true
+    };
+    option (google.api.http) = {
+      post: "/v1/{name=universes/*/levels}:write"
+      body: "*"
+    };
+  }
+
+  // Streams a universe's levels whenever they change, no more often than
+  // asked, until the caller cancels.
+  rpc StreamLevels(StreamLevelsRequest) returns (stream StreamLevelsResponse) {
+    option (mcp.v1.tool) = {
+      title: "Stream levels"
+      read_only: true
+      open_world: false
+    };
+    option (google.api.http) = {
+      post: "/v1/{name=universes/*/levels}:stream"
+      body: "*"
+    };
+  }
+}

@@ -13,6 +13,13 @@ authors.workspace = true
 
 [dependencies]
 regalium-dmx-core.workspace = true
+prost.workspace = true
+pbjson.workspace = true
+pbjson-types.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
 
 [lints]
 workspace = true

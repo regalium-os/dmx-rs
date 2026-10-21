@@ -1,0 +1,54 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.node.v1;
+
+option java_multiple_files = true;
+option java_outer_classname = "EnumsProto";
+option java_package = "dev.regalium.dmx.node.v1";
+
+// How a node carries DMX512: the transport its universes travel on.
+enum Protocol {
+  // Default, unused.
+  PROTOCOL_UNSPECIFIED = 0;
+
+  // Art-Net 4, over UDP port 6454.
+  PROTOCOL_ARTNET = 1;
+
+  // Streaming ACN, ANSI E1.31, over UDP port 5568, multicast.
+  PROTOCOL_SACN = 2;
+
+  // The physical line: an ENTTEC-API USB widget, or a UART on an RS-485
+  // transceiver.
+  PROTOCOL_SERIAL = 3;
+}
+
+// What this server last saw of a node.
+//
+// A node going silent is an event, not an error: a node is power-cycled, a
+// cable is moved. The state says so, and the node stays listed, so where it
+// went quiet stays visible.
+enum NodeState {
+  // Default, unused.
+  NODE_STATE_UNSPECIFIED = 0;
+
+  // It answered recently: a poll reply, a discovery announcement, a probe.
+  NODE_STATE_REACHABLE = 1;
+
+  // It has stopped answering.
+  NODE_STATE_UNREACHABLE = 2;
+}
+
+// Which way a port carries DMX512, from the node's side.
+enum PortDirection {
+  // Default, unused.
+  PORT_DIRECTION_UNSPECIFIED = 0;
+
+  // The node drives a DMX512 line from the network: Art-Net's output port.
+  PORT_DIRECTION_OUTPUT = 1;
+
+  // The node reads a DMX512 line onto the network: Art-Net's input port.
+  PORT_DIRECTION_INPUT = 2;
+}

@@ -1,0 +1,88 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.server.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "PolicyProto";
+option java_package = "dev.regalium.dmx.server.v1";
+
+// The Policy is the one output safety policy every write passes through:
+// levels from any surface, and RDM SETs. No surface has its own.
+//
+// A singleton. Blackout and hold act on every output universe at once, at
+// the output, after whatever was written: a write that arrives during
+// blackout is kept, and goes out when blackout ends.
+message Policy {
+  option (google.api.resource) = {
+    type: "dmx.regalium.dev/Policy"
+    pattern: "policy"
+    singular: "policy"
+    plural: "policies"
+  };
+
+  // The policy's name: always `policy`.
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // Every output sends zeros, whatever its levels.
+  bool blackout = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Every output keeps sending what it sent when hold began, and writes
+  // wait, as a console's freeze does.
+  bool hold = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // The grand master: every level is scaled by master / 255 on its way
+  // out. 255, full, unless set.
+  int32 master = 4 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).int32 = {
+      gte: 0
+      lte: 255
+    }
+  ];
+
+  // Whether MCP clients may write: set by the server's --allow-writes
+  // flag, and never through this API.
+  bool mcp_writes_allowed = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When it last changed.
+  google.protobuf.Timestamp update_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// The server, as it is now. A singleton.
+message ServerStatus {
+  option (google.api.resource) = {
+    type: "dmx.regalium.dev/ServerStatus"
+    pattern: "serverStatus"
+    singular: "serverStatus"
+    plural: "serverStatuses"
+  };
+
+  // The status's name: always `serverStatus`.
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+
+  // The server's version.
+  string version = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When it started.
+  google.protobuf.Timestamp start_time = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output universes it sends.
+  int32 output_count = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Input universes it merges.
+  int32 input_count = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Nodes discovery has found.
+  int32 node_count = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // RDM devices discovery has found, across universes.
+  int32 device_count = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

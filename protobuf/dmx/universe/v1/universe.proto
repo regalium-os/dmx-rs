@@ -1,0 +1,168 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.universe.v1;
+
+import "buf/validate/validate.proto";
+import "dmx/node/v1/enums.proto";
+import "dmx/universe/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "UniverseProto";
+option java_package = "dev.regalium.dmx.universe.v1";
+
+// A Universe is 512 slots of DMX512 on one transport, and what this server
+// does with them: sends them, as an output, or merges what arrives, as an
+// input.
+//
+// Creating one patches an output or listens to an input; deleting one stops
+// it, and an sACN output says so to its receivers. Its ID is the caller's:
+// `stage-left`, `foh-1`.
+message Universe {
+  option (google.api.resource) = {
+    type: "dmx.regalium.dev/Universe"
+    pattern: "universes/{universe}"
+    singular: "universe"
+    plural: "universes"
+  };
+
+  // The universe's name.
+  // Format: universes/{universe}
+  string name = 1 [
+    (google.api.field_behavior) = IDENTIFIER,
+    (buf.validate.field).string.pattern = "^universes/[a-z][a-z0-9-]{0,62}$"
+  ];
+
+  // A label for people.
+  string display_name = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // The transport it travels on.
+  dmx.node.v1.Protocol protocol = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.field_behavior) = IMMUTABLE,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+
+  // The universe number, as the protocol numbers universes: an Art-Net
+  // Port-Address, 0 to 32767; an sACN universe, 1 to 63999; 1 on a serial
+  // line.
+  int32 number = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.field_behavior) = IMMUTABLE,
+    (buf.validate.field).int32 = {
+      gte: 0
+      lte: 63999
+    }
+  ];
+
+  // The node it is carried by: required for a serial line, which is one
+  // widget's; for Art-Net and sACN, where the network carries it, empty.
+  // Format: nodes/{node}
+  string node = 5 [
+    (google.api.field_behavior) = OPTIONAL,
+    (google.api.field_behavior) = IMMUTABLE,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Node"
+  ];
+
+  // What the server does with it: sends it, or merges what arrives.
+  oneof role {
+    // Sent, refreshed by this policy.
+    Output output = 6;
+
+    // Received, and merged.
+    Input input = 7;
+  }
+
+  // What it is doing now.
+  UniverseState state = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // How many slots it carries, 0 to 512.
+  int32 slot_count = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When it was created.
+  google.protobuf.Timestamp create_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// How an output universe is refreshed.
+message Output {
+  // The shortest time between packets: about 23 ms, 44 Hz, at full rate.
+  // Unset, the transport's own.
+  google.protobuf.Duration interval = 1 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).duration = {
+      gte: {nanos: 1000000}
+      lte: {seconds: 1}
+    }
+  ];
+
+  // How often unchanged levels are resent. Unset, the transport's own: one
+  // second on the network, every interval on a raw line.
+  google.protobuf.Duration keep_alive = 2 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).duration = {
+      gte: {nanos: 1000000}
+      lte: {seconds: 60}
+    }
+  ];
+
+  // For sACN, the priority sent with every packet: 0 to 200, 100 unset.
+  optional int32 priority = 3 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).int32 = {
+      gte: 0
+      lte: 200
+    }
+  ];
+}
+
+// How an input universe merges its sources.
+message Input {
+  // HTP or LTP, among the sources at the highest priority present.
+  MergeMode merge_mode = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+
+  // The most sources merged at once; more are refused. Defaults to 8.
+  int32 max_sources = 2 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).int32 = {
+      gte: 0
+      lte: 64
+    }
+  ];
+
+  // The sources merged now.
+  repeated Source sources = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// One source an input is merging.
+message Source {
+  // Who it is: an Art-Net sender's address, `10.0.0.9:6454`; an sACN CID.
+  string id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Its name, where the protocol carries one: an sACN source name.
+  string display_name = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Its priority: 0 to 200, 100 for Art-Net, which has none.
+  int32 priority = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Whether it is at the highest priority present, and so merged rather
+  // than held.
+  bool merged = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When its last packet arrived.
+  google.protobuf.Timestamp last_seen_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

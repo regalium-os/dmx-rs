@@ -1,0 +1,133 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.rdm.v1;
+
+import "buf/validate/validate.proto";
+import "dmx/rdm/v1/device.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/field_mask.proto";
+import "mcp/v1/annotations.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "DeviceMessagesProto";
+option java_package = "dev.regalium.dmx.rdm.v1";
+
+// Request message for DeviceService.GetDevice.
+message GetDeviceRequest {
+  // The device to read: DEVICE_INFO and its labels, asked live.
+  // Format: universes/{universe}/devices/{device}
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "The device, as list_devices names it."
+      examples: "universes/stage-left/devices/4c55-12345678"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Device"
+  ];
+}
+
+// Request message for DeviceService.ListDevices.
+message ListDevicesRequest {
+  // The universe whose devices to list.
+  // Format: universes/{universe}
+  string parent = 1 [
+    (mcp.v1.field) = {
+      description: "The universe, as list_universes names it."
+      examples: "universes/stage-left"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).child_type = "dmx.regalium.dev/Device"
+  ];
+
+  // Maximum number of devices to return; zero selects a default.
+  int32 page_size = 2 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).int32 = {
+      gte: 0
+      lte: 1000
+    }
+  ];
+
+  // A page token from a previous ListDevices call.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Filter expression, AIP-160: `manufacturer_id = 19541`, or
+  // `state = DEVICE_STATE_SILENT`.
+  string filter = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Sort order, AIP-132. Defaults to UID ascending.
+  string order_by = 5 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for DeviceService.ListDevices.
+message ListDevicesResponse {
+  // The devices, as discovery and the last reads left them.
+  repeated Device devices = 1;
+
+  // Pass to the next ListDevices call; empty when there are no more.
+  string next_page_token = 2;
+}
+
+// Request message for DeviceService.UpdateDevice.
+message UpdateDeviceRequest {
+  // The device to update. Its name field identifies which.
+  Device device = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Fields to SET: display_name (DEVICE_LABEL), start_address
+  // (DMX_START_ADDRESS), personality (DMX_PERSONALITY), identifying
+  // (IDENTIFY_DEVICE). An empty mask sets every one of those that is set
+  // in `device`, as AIP-134 has it; name the field to set only that one.
+  google.protobuf.FieldMask update_mask = 2 [
+    (mcp.v1.field) = {
+      description: "Which of display_name, start_address, personality and identifying to set."
+      examples: "start_address"
+      examples: "identifying"
+    },
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}
+
+// Request message for DeviceService.DeleteDevice.
+message DeleteDeviceRequest {
+  // The device to forget. Nothing is sent to it, and it reappears at the
+  // next discovery.
+  // Format: universes/{universe}/devices/{device}
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "The device to forget, as list_devices names it."
+      examples: "universes/stage-left/devices/4c55-12345678"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Device"
+  ];
+}
+
+// Request message for DeviceService.DiscoverDevices.
+message DiscoverDevicesRequest {
+  // The universe whose line to search: by binary search on a serial line,
+  // or from the node's own table on Art-Net.
+  // Format: universes/{universe}
+  string parent = 1 [
+    (mcp.v1.field) = {
+      description: "The universe whose RDM devices to discover."
+      examples: "universes/stage-left"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).child_type = "dmx.regalium.dev/Device"
+  ];
+}
+
+// Response message for DeviceService.DiscoverDevices.
+message DiscoverDevicesResponse {
+  // Every device found, in UID order, with only its UID read; GetDevice
+  // reads the rest.
+  repeated Device devices = 1;
+
+  // Whether the search gave up before covering the whole UID range: a line
+  // so noisy every answer collided. The devices found are still listed.
+  bool incomplete = 2;
+}

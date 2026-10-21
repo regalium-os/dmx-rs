@@ -1,0 +1,386 @@
+components:
+  schemas:
+    dmx.node.v1.DeleteNodeRequest:
+      description: Request message for NodeService.DeleteNode.
+      properties:
+        name:
+          description: 'The node to forget. Nothing is sent to it, and it reappears
+            when it next answers discovery. Format: nodes/{node}'
+          type: string
+      type: object
+    dmx.node.v1.DiscoverNodesRequest:
+      description: Request message for NodeService.DiscoverNodes.
+      properties:
+        probeUnidentifiedPorts:
+          description: Also probe serial ports that may be generic USB serial cables
+            rather than widgets. The probe sends 11 octets of widget API requests,
+            never DMX, but they reach whatever is on the cable.
+          type: boolean
+        protocols:
+          description: The protocols to discover on. Empty means every protocol the
+            server runs.
+          items:
+            description: 'How a node carries DMX512: the transport its universes travel
+              on.'
+            enum:
+            - PROTOCOL_UNSPECIFIED
+            - PROTOCOL_ARTNET
+            - PROTOCOL_SACN
+            - PROTOCOL_SERIAL
+            type: string
+          type: array
+        wait:
+          description: How long to wait for answers. Defaults to three seconds; at
+            most a minute.
+          type: string
+      type: object
+    dmx.node.v1.DiscoverNodesResponse:
+      description: Response message for NodeService.DiscoverNodes.
+      properties:
+        nodes:
+          description: Every node that answered, with what its answer carried.
+          items:
+            description: 'A Node is one piece of equipment carrying universes: an
+              Art-Net node that answered ArtPoll, an sACN source that announced its
+              universes, or a USB widget that answered the serial probe.'
+            properties:
+              address:
+                description: 'Where it is reached: `10.0.0.5:6454` for Art-Net and
+                  sACN, the device path for a widget, `/dev/ttyUSB0`.'
+                type: string
+              cid:
+                description: An sACN source's CID, as a UUID; empty for other protocols.
+                type: string
+              description:
+                description: 'Its long name: Art-Net''s LongName.'
+                type: string
+              discoverTime:
+                description: When it was first discovered.
+                format: date-time
+                type: string
+              displayName:
+                description: 'Its short name: Art-Net''s ShortName, an sACN source
+                  name, a widget''s product string.'
+                type: string
+              firmwareVersion:
+                description: Its firmware version, as the protocol reports it.
+                type: string
+              lastSeenTime:
+                description: When it last answered anything.
+                format: date-time
+                type: string
+              macAddress:
+                description: Its MAC address, `00:11:22:33:44:55`, where the protocol
+                  carries one.
+                type: string
+              name:
+                description: 'The node''s name. Format: nodes/{node}'
+                type: string
+              ports:
+                description: 'Its ports: up to four per Art-Net reply, one for a widget.'
+                items:
+                  description: 'One of a node''s ports: a DMX512 line, and the universe
+                    it carries.'
+                  properties:
+                    direction:
+                      description: Which way it carries DMX512.
+                      enum:
+                      - PORT_DIRECTION_UNSPECIFIED
+                      - PORT_DIRECTION_OUTPUT
+                      - PORT_DIRECTION_INPUT
+                      type: string
+                    index:
+                      description: The port's position on the node, from 1.
+                      format: int32
+                      type: integer
+                    merging:
+                      description: Whether the node reports it merging more than one
+                        source.
+                      type: boolean
+                    universeNumber:
+                      description: 'The universe number it carries, as its protocol
+                        numbers universes: an Art-Net Port-Address, 0 to 32767; an
+                        sACN universe, 1 to 63999.'
+                      format: int32
+                      type: integer
+                  type: object
+                type: array
+              protocol:
+                description: The transport it speaks.
+                enum:
+                - PROTOCOL_UNSPECIFIED
+                - PROTOCOL_ARTNET
+                - PROTOCOL_SACN
+                - PROTOCOL_SERIAL
+                type: string
+              serialNumber:
+                description: A widget's serial number, as printed on it; empty for
+                  network nodes.
+                type: string
+              state:
+                description: Whether it answered last time.
+                enum:
+                - NODE_STATE_UNSPECIFIED
+                - NODE_STATE_REACHABLE
+                - NODE_STATE_UNREACHABLE
+                type: string
+            type: object
+          type: array
+      type: object
+    dmx.node.v1.GetNodeRequest:
+      description: Request message for NodeService.GetNode.
+      properties:
+        name:
+          description: 'The node to read. Format: nodes/{node}'
+          type: string
+      type: object
+    dmx.node.v1.ListNodesRequest:
+      description: Request message for NodeService.ListNodes.
+      properties:
+        filter:
+          description: 'Filter expression, AIP-160: `protocol = PROTOCOL_ARTNET`,
+            or `state = NODE_STATE_UNREACHABLE`.'
+          type: string
+        orderBy:
+          description: Sort order, AIP-132. Defaults to name ascending.
+          type: string
+        pageSize:
+          description: Maximum number of nodes to return; zero selects a default.
+          format: int32
+          type: integer
+        pageToken:
+          description: A page token from a previous ListNodes call.
+          type: string
+      type: object
+    dmx.node.v1.ListNodesResponse:
+      description: Response message for NodeService.ListNodes.
+      properties:
+        nextPageToken:
+          description: Pass to the next ListNodes call; empty when there are no more.
+          type: string
+        nodes:
+          description: The nodes.
+          items:
+            description: 'A Node is one piece of equipment carrying universes: an
+              Art-Net node that answered ArtPoll, an sACN source that announced its
+              universes, or a USB widget that answered the serial probe.'
+            properties:
+              address:
+                description: 'Where it is reached: `10.0.0.5:6454` for Art-Net and
+                  sACN, the device path for a widget, `/dev/ttyUSB0`.'
+                type: string
+              cid:
+                description: An sACN source's CID, as a UUID; empty for other protocols.
+                type: string
+              description:
+                description: 'Its long name: Art-Net''s LongName.'
+                type: string
+              discoverTime:
+                description: When it was first discovered.
+                format: date-time
+                type: string
+              displayName:
+                description: 'Its short name: Art-Net''s ShortName, an sACN source
+                  name, a widget''s product string.'
+                type: string
+              firmwareVersion:
+                description: Its firmware version, as the protocol reports it.
+                type: string
+              lastSeenTime:
+                description: When it last answered anything.
+                format: date-time
+                type: string
+              macAddress:
+                description: Its MAC address, `00:11:22:33:44:55`, where the protocol
+                  carries one.
+                type: string
+              name:
+                description: 'The node''s name. Format: nodes/{node}'
+                type: string
+              ports:
+                description: 'Its ports: up to four per Art-Net reply, one for a widget.'
+                items:
+                  description: 'One of a node''s ports: a DMX512 line, and the universe
+                    it carries.'
+                  properties:
+                    direction:
+                      description: Which way it carries DMX512.
+                      enum:
+                      - PORT_DIRECTION_UNSPECIFIED
+                      - PORT_DIRECTION_OUTPUT
+                      - PORT_DIRECTION_INPUT
+                      type: string
+                    index:
+                      description: The port's position on the node, from 1.
+                      format: int32
+                      type: integer
+                    merging:
+                      description: Whether the node reports it merging more than one
+                        source.
+                      type: boolean
+                    universeNumber:
+                      description: 'The universe number it carries, as its protocol
+                        numbers universes: an Art-Net Port-Address, 0 to 32767; an
+                        sACN universe, 1 to 63999.'
+                      format: int32
+                      type: integer
+                  type: object
+                type: array
+              protocol:
+                description: The transport it speaks.
+                enum:
+                - PROTOCOL_UNSPECIFIED
+                - PROTOCOL_ARTNET
+                - PROTOCOL_SACN
+                - PROTOCOL_SERIAL
+                type: string
+              serialNumber:
+                description: A widget's serial number, as printed on it; empty for
+                  network nodes.
+                type: string
+              state:
+                description: Whether it answered last time.
+                enum:
+                - NODE_STATE_UNSPECIFIED
+                - NODE_STATE_REACHABLE
+                - NODE_STATE_UNREACHABLE
+                type: string
+            type: object
+          type: array
+      type: object
+    dmx.node.v1.Node:
+      description: 'A Node is one piece of equipment carrying universes: an Art-Net
+        node that answered ArtPoll, an sACN source that announced its universes, or
+        a USB widget that answered the serial probe.'
+      properties:
+        address:
+          description: 'Where it is reached: `10.0.0.5:6454` for Art-Net and sACN,
+            the device path for a widget, `/dev/ttyUSB0`.'
+          type: string
+        cid:
+          description: An sACN source's CID, as a UUID; empty for other protocols.
+          type: string
+        description:
+          description: 'Its long name: Art-Net''s LongName.'
+          type: string
+        discoverTime:
+          description: When it was first discovered.
+          format: date-time
+          type: string
+        displayName:
+          description: 'Its short name: Art-Net''s ShortName, an sACN source name,
+            a widget''s product string.'
+          type: string
+        firmwareVersion:
+          description: Its firmware version, as the protocol reports it.
+          type: string
+        lastSeenTime:
+          description: When it last answered anything.
+          format: date-time
+          type: string
+        macAddress:
+          description: Its MAC address, `00:11:22:33:44:55`, where the protocol carries
+            one.
+          type: string
+        name:
+          description: 'The node''s name. Format: nodes/{node}'
+          type: string
+        ports:
+          description: 'Its ports: up to four per Art-Net reply, one for a widget.'
+          items:
+            description: 'One of a node''s ports: a DMX512 line, and the universe
+              it carries.'
+            properties:
+              direction:
+                description: Which way it carries DMX512.
+                enum:
+                - PORT_DIRECTION_UNSPECIFIED
+                - PORT_DIRECTION_OUTPUT
+                - PORT_DIRECTION_INPUT
+                type: string
+              index:
+                description: The port's position on the node, from 1.
+                format: int32
+                type: integer
+              merging:
+                description: Whether the node reports it merging more than one source.
+                type: boolean
+              universeNumber:
+                description: 'The universe number it carries, as its protocol numbers
+                  universes: an Art-Net Port-Address, 0 to 32767; an sACN universe,
+                  1 to 63999.'
+                format: int32
+                type: integer
+            type: object
+          type: array
+        protocol:
+          description: The transport it speaks.
+          enum:
+          - PROTOCOL_UNSPECIFIED
+          - PROTOCOL_ARTNET
+          - PROTOCOL_SACN
+          - PROTOCOL_SERIAL
+          type: string
+        serialNumber:
+          description: A widget's serial number, as printed on it; empty for network
+            nodes.
+          type: string
+        state:
+          description: Whether it answered last time.
+          enum:
+          - NODE_STATE_UNSPECIFIED
+          - NODE_STATE_REACHABLE
+          - NODE_STATE_UNREACHABLE
+          type: string
+      type: object
+    dmx.node.v1.NodeState:
+      description: What this server last saw of a node.
+      enum:
+      - NODE_STATE_UNSPECIFIED
+      - NODE_STATE_REACHABLE
+      - NODE_STATE_UNREACHABLE
+      type: string
+    dmx.node.v1.Port:
+      description: 'One of a node''s ports: a DMX512 line, and the universe it carries.'
+      properties:
+        direction:
+          description: Which way it carries DMX512.
+          enum:
+          - PORT_DIRECTION_UNSPECIFIED
+          - PORT_DIRECTION_OUTPUT
+          - PORT_DIRECTION_INPUT
+          type: string
+        index:
+          description: The port's position on the node, from 1.
+          format: int32
+          type: integer
+        merging:
+          description: Whether the node reports it merging more than one source.
+          type: boolean
+        universeNumber:
+          description: 'The universe number it carries, as its protocol numbers universes:
+            an Art-Net Port-Address, 0 to 32767; an sACN universe, 1 to 63999.'
+          format: int32
+          type: integer
+      type: object
+    dmx.node.v1.PortDirection:
+      description: Which way a port carries DMX512, from the node's side.
+      enum:
+      - PORT_DIRECTION_UNSPECIFIED
+      - PORT_DIRECTION_OUTPUT
+      - PORT_DIRECTION_INPUT
+      type: string
+    dmx.node.v1.Protocol:
+      description: 'How a node carries DMX512: the transport its universes travel
+        on.'
+      enum:
+      - PROTOCOL_UNSPECIFIED
+      - PROTOCOL_ARTNET
+      - PROTOCOL_SACN
+      - PROTOCOL_SERIAL
+      type: string
+info:
+  title: OpenAPI Spec for Solo APIs.
+  version: v1
+openapi: 3.0.1
+paths: null

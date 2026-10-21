@@ -1,0 +1,31 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# The schema module. protobuf/ is the source of truth for what a node, a
+# universe, its levels and an RDM device are; the Rust types, the OpenAPI
+# description and the zero-copy mirror of the levels stream are all
+# generated from it. Laid out, and linted, as bacnet-rs's is.
+version: v2
+modules:
+  - path: protobuf
+    name: buf.build/regalium-os/dmx-rs
+lint:
+  use:
+    - STANDARD
+  except:
+    # buf's STANDARD category and Google AIP disagree here, and AIP is the
+    # authority for this schema, as it is in bacnet-rs.
+    #
+    # AIP-131 requires a standard Get to return the resource itself, not a
+    # GetNodeResponse wrapper, and AIP-133 and AIP-134 say the same for
+    # Create and Update. Honouring buf would mean near-empty wrapper messages
+    # per resource and a schema that fails the AIP linter CI gates on.
+    - RPC_REQUEST_RESPONSE_UNIQUE
+    - RPC_RESPONSE_STANDARD_NAME
+breaking:
+  use:
+    - FILE
+deps:
+  - buf.build/googleapis/googleapis
+  - buf.build/bufbuild/protovalidate
+  - buf.build/the-protobuf-project/mcp:v1.7.3

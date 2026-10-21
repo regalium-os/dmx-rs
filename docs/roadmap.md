@@ -34,8 +34,8 @@ Art-Net, sACN and RDM dissectors as the second opinion where we do not.
 | 5 | sACN: data, sync, universe discovery, priority, source loss | `sacn`, `core`, `runtime` | **built** |
 | 6 | the physical line: ENTTEC DMX USB Pro, RS-485 break generation; port auto-discovery | `serial` | **built** |
 | 6b | RDM: codec, discovery, GET/SET, over the widget and Art-Net (sACN has none; E1.33 later) | `core`, `runtime`, transports | **built** |
-| 7 | **the schema tree** — designed together, see below | `schema`, `protobuf/` | next: to discuss |
-| 8 | the field probe: TUI and CLI | `dmx-probe` | |
+| 7 | **the schema tree**, decided below | `schema`, `protobuf/` | **built** |
+| 8 | the field probe: TUI and CLI | `dmx-probe` | next |
 | 9 | the server: gRPC, REST, MCP generated from the schema | `dmx-server` | |
 | — | the rig simulator, growing with each transport | `dmx-sim` | alongside 4–6b |
 | — | fuzz targets for every decoder | `fuzz/` | `frame`, `artnet`, `sacn`, `enttec`, `rdm` **built**; one per codec after |
@@ -49,24 +49,24 @@ transport to test against real fixtures.
 
 Phase by phase, with what was deferred and why, in [built.md](built.md).
 
-## Phase 7: the schema, to discuss
+## Phase 7: the schema, decided
 
-The protos drive the API, the generated Rust model and every MCP tool, so they
-are designed before the probe and server, not grown out of them. The open
-questions, for the session where we design them:
+Designed as bacnet-rs's is: resources first, standard methods over them,
+custom methods for what is neither, and Google's AIP linter, strict, as the
+gate. The answers to the questions this section used to ask:
 
-- **Resources.** A first cut: `nodes/{node}/ports/{port}`, `universes/{universe}`,
-  `fixtures/{fixture}` (patch: universe, address, profile),
-  `profiles/{profile}`, `rdm/devices/{device}/parameters/{parameter}`,
-  `scenes/{scene}`, `cues/{cue}`. Which of these belong in a *driver*, and
-  which in a show controller built on it?
-- **Fixture profiles.** Import GDTF, the Open Fixture Library, or our own?
-- **The hot path.** Universe output streamed at up to 44 Hz per universe:
-  protobuf on gRPC, or a FlatBuffers mirror as bacnet-rs does for COV?
-- **MCP shape.** Which tools write, how the safety policy appears in their
-  descriptions, and what a model may never do (strobe, full intensity).
-- **Sharing with bacnet-rs.** Common packages (network, traffic, server
-  status) copied or imported from a shared module.
+- **Resources.** `nodes`, `universes` with their `levels`, RDM `devices` and
+  their `parameters` under a universe, and the `policy` and `serverStatus`
+  singletons. Fixtures, profiles, scenes and cues belong to a show
+  controller built on this driver, not to the driver.
+- **Fixture profiles.** None here, for the same reason.
+- **The hot path.** The levels stream is protobuf on the API, and mirrored to
+  FlatBuffers and Cap'n Proto through `buffers`, as COV is in bacnet-rs.
+- **MCP shape.** Every write carries an elicitation saying what moves; every
+  write goes through `policy` (blackout, hold, master); MCP writes are
+  refused without `--allow-writes`, which `policy` reports and no call sets.
+- **Sharing with bacnet-rs.** Conventions copied, not a shared module: the
+  two schemas version independently.
 
 ## Later
 

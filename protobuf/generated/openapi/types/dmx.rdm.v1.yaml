@@ -1,0 +1,547 @@
+components:
+  schemas:
+    dmx.rdm.v1.DeleteDeviceRequest:
+      description: Request message for DeviceService.DeleteDevice.
+      properties:
+        name:
+          description: 'The device to forget. Nothing is sent to it, and it reappears
+            at the next discovery. Format: universes/{universe}/devices/{device}'
+          type: string
+      type: object
+    dmx.rdm.v1.Device:
+      description: 'A Device is one RDM responder on a universe''s line: a fixture,
+        a dimmer, a splitter (ANSI E1.20).'
+      properties:
+        discoverTime:
+          description: When discovery first found it.
+          format: date-time
+          type: string
+        displayName:
+          description: 'DEVICE_LABEL: a label the user gives it. Writable, up to 32
+            octets.'
+          type: string
+        footprint:
+          description: Slots it uses in its current personality.
+          format: int32
+          type: integer
+        identifying:
+          description: 'IDENTIFY_DEVICE: whether it is showing itself — flashing,
+            moving. Writable.'
+          type: boolean
+        lastSeenTime:
+          description: When it last answered.
+          format: date-time
+          type: string
+        manufacturer:
+          description: MANUFACTURER_LABEL, where the device supports it.
+          type: string
+        manufacturerId:
+          description: The ESTA manufacturer id.
+          format: int32
+          type: integer
+        model:
+          description: DEVICE_MODEL_DESCRIPTION, where the device supports it.
+          type: string
+        modelId:
+          description: DEVICE_INFO's model id.
+          format: int32
+          type: integer
+        name:
+          description: 'The device''s name. Format: universes/{universe}/devices/{device}'
+          type: string
+        personality:
+          description: 'DMX_PERSONALITY: the current personality, from 1. Writable;
+            changing it changes what every slot means.'
+          format: int32
+          type: integer
+        personalityCount:
+          description: How many personalities it has.
+          format: int32
+          type: integer
+        productCategory:
+          description: DEVICE_INFO's product category.
+          format: int32
+          type: integer
+        rdmUid:
+          description: 'The RDM UID as RDM tools print it: `4c55:12345678`. Not a
+            UUID, which AIP-148''s `uid` would be.'
+          type: string
+        sensorCount:
+          description: How many sensors it has.
+          format: int32
+          type: integer
+        softwareVersion:
+          description: SOFTWARE_VERSION_LABEL.
+          type: string
+        softwareVersionId:
+          description: DEVICE_INFO's software version id.
+          format: int64
+          type: integer
+          x-kubernetes-int-or-string: true
+        startAddress:
+          description: 'DMX_START_ADDRESS: where its footprint starts, 1 to 512. Writable;
+            moving it re-patches the fixture.'
+          format: int32
+          type: integer
+        state:
+          description: Whether it answered last time.
+          enum:
+          - DEVICE_STATE_UNSPECIFIED
+          - DEVICE_STATE_RESPONDING
+          - DEVICE_STATE_SILENT
+          type: string
+        subDeviceCount:
+          description: How many sub-devices it has.
+          format: int32
+          type: integer
+      type: object
+    dmx.rdm.v1.DeviceState:
+      description: What this server last saw of an RDM device.
+      enum:
+      - DEVICE_STATE_UNSPECIFIED
+      - DEVICE_STATE_RESPONDING
+      - DEVICE_STATE_SILENT
+      type: string
+    dmx.rdm.v1.DiscoverDevicesRequest:
+      description: Request message for DeviceService.DiscoverDevices.
+      properties:
+        parent:
+          description: 'The universe whose line to search: by binary search on a serial
+            line, or from the node''s own table on Art-Net. Format: universes/{universe}'
+          type: string
+      type: object
+    dmx.rdm.v1.DiscoverDevicesResponse:
+      description: Response message for DeviceService.DiscoverDevices.
+      properties:
+        devices:
+          description: Every device found, in UID order, with only its UID read; GetDevice
+            reads the rest.
+          items:
+            description: 'A Device is one RDM responder on a universe''s line: a fixture,
+              a dimmer, a splitter (ANSI E1.20).'
+            properties:
+              discoverTime:
+                description: When discovery first found it.
+                format: date-time
+                type: string
+              displayName:
+                description: 'DEVICE_LABEL: a label the user gives it. Writable, up
+                  to 32 octets.'
+                type: string
+              footprint:
+                description: Slots it uses in its current personality.
+                format: int32
+                type: integer
+              identifying:
+                description: 'IDENTIFY_DEVICE: whether it is showing itself — flashing,
+                  moving. Writable.'
+                type: boolean
+              lastSeenTime:
+                description: When it last answered.
+                format: date-time
+                type: string
+              manufacturer:
+                description: MANUFACTURER_LABEL, where the device supports it.
+                type: string
+              manufacturerId:
+                description: The ESTA manufacturer id.
+                format: int32
+                type: integer
+              model:
+                description: DEVICE_MODEL_DESCRIPTION, where the device supports it.
+                type: string
+              modelId:
+                description: DEVICE_INFO's model id.
+                format: int32
+                type: integer
+              name:
+                description: 'The device''s name. Format: universes/{universe}/devices/{device}'
+                type: string
+              personality:
+                description: 'DMX_PERSONALITY: the current personality, from 1. Writable;
+                  changing it changes what every slot means.'
+                format: int32
+                type: integer
+              personalityCount:
+                description: How many personalities it has.
+                format: int32
+                type: integer
+              productCategory:
+                description: DEVICE_INFO's product category.
+                format: int32
+                type: integer
+              rdmUid:
+                description: 'The RDM UID as RDM tools print it: `4c55:12345678`.
+                  Not a UUID, which AIP-148''s `uid` would be.'
+                type: string
+              sensorCount:
+                description: How many sensors it has.
+                format: int32
+                type: integer
+              softwareVersion:
+                description: SOFTWARE_VERSION_LABEL.
+                type: string
+              softwareVersionId:
+                description: DEVICE_INFO's software version id.
+                format: int64
+                type: integer
+                x-kubernetes-int-or-string: true
+              startAddress:
+                description: 'DMX_START_ADDRESS: where its footprint starts, 1 to
+                  512. Writable; moving it re-patches the fixture.'
+                format: int32
+                type: integer
+              state:
+                description: Whether it answered last time.
+                enum:
+                - DEVICE_STATE_UNSPECIFIED
+                - DEVICE_STATE_RESPONDING
+                - DEVICE_STATE_SILENT
+                type: string
+              subDeviceCount:
+                description: How many sub-devices it has.
+                format: int32
+                type: integer
+            type: object
+          type: array
+        incomplete:
+          description: 'Whether the search gave up before covering the whole UID range:
+            a line so noisy every answer collided. The devices found are still listed.'
+          type: boolean
+      type: object
+    dmx.rdm.v1.GetDeviceRequest:
+      description: Request message for DeviceService.GetDevice.
+      properties:
+        name:
+          description: 'The device to read: DEVICE_INFO and its labels, asked live.
+            Format: universes/{universe}/devices/{device}'
+          type: string
+      type: object
+    dmx.rdm.v1.GetParameterRequest:
+      description: 'Request message for DeviceService.GetParameter: an RDM GET.'
+      properties:
+        name:
+          description: 'The parameter to read. Format: universes/{universe}/devices/{device}/parameters/{parameter}'
+          type: string
+      type: object
+    dmx.rdm.v1.ListDevicesRequest:
+      description: Request message for DeviceService.ListDevices.
+      properties:
+        filter:
+          description: 'Filter expression, AIP-160: `manufacturer_id = 19541`, or
+            `state = DEVICE_STATE_SILENT`.'
+          type: string
+        orderBy:
+          description: Sort order, AIP-132. Defaults to UID ascending.
+          type: string
+        pageSize:
+          description: Maximum number of devices to return; zero selects a default.
+          format: int32
+          type: integer
+        pageToken:
+          description: A page token from a previous ListDevices call.
+          type: string
+        parent:
+          description: 'The universe whose devices to list. Format: universes/{universe}'
+          type: string
+      type: object
+    dmx.rdm.v1.ListDevicesResponse:
+      description: Response message for DeviceService.ListDevices.
+      properties:
+        devices:
+          description: The devices, as discovery and the last reads left them.
+          items:
+            description: 'A Device is one RDM responder on a universe''s line: a fixture,
+              a dimmer, a splitter (ANSI E1.20).'
+            properties:
+              discoverTime:
+                description: When discovery first found it.
+                format: date-time
+                type: string
+              displayName:
+                description: 'DEVICE_LABEL: a label the user gives it. Writable, up
+                  to 32 octets.'
+                type: string
+              footprint:
+                description: Slots it uses in its current personality.
+                format: int32
+                type: integer
+              identifying:
+                description: 'IDENTIFY_DEVICE: whether it is showing itself — flashing,
+                  moving. Writable.'
+                type: boolean
+              lastSeenTime:
+                description: When it last answered.
+                format: date-time
+                type: string
+              manufacturer:
+                description: MANUFACTURER_LABEL, where the device supports it.
+                type: string
+              manufacturerId:
+                description: The ESTA manufacturer id.
+                format: int32
+                type: integer
+              model:
+                description: DEVICE_MODEL_DESCRIPTION, where the device supports it.
+                type: string
+              modelId:
+                description: DEVICE_INFO's model id.
+                format: int32
+                type: integer
+              name:
+                description: 'The device''s name. Format: universes/{universe}/devices/{device}'
+                type: string
+              personality:
+                description: 'DMX_PERSONALITY: the current personality, from 1. Writable;
+                  changing it changes what every slot means.'
+                format: int32
+                type: integer
+              personalityCount:
+                description: How many personalities it has.
+                format: int32
+                type: integer
+              productCategory:
+                description: DEVICE_INFO's product category.
+                format: int32
+                type: integer
+              rdmUid:
+                description: 'The RDM UID as RDM tools print it: `4c55:12345678`.
+                  Not a UUID, which AIP-148''s `uid` would be.'
+                type: string
+              sensorCount:
+                description: How many sensors it has.
+                format: int32
+                type: integer
+              softwareVersion:
+                description: SOFTWARE_VERSION_LABEL.
+                type: string
+              softwareVersionId:
+                description: DEVICE_INFO's software version id.
+                format: int64
+                type: integer
+                x-kubernetes-int-or-string: true
+              startAddress:
+                description: 'DMX_START_ADDRESS: where its footprint starts, 1 to
+                  512. Writable; moving it re-patches the fixture.'
+                format: int32
+                type: integer
+              state:
+                description: Whether it answered last time.
+                enum:
+                - DEVICE_STATE_UNSPECIFIED
+                - DEVICE_STATE_RESPONDING
+                - DEVICE_STATE_SILENT
+                type: string
+              subDeviceCount:
+                description: How many sub-devices it has.
+                format: int32
+                type: integer
+            type: object
+          type: array
+        nextPageToken:
+          description: Pass to the next ListDevices call; empty when there are no
+            more.
+          type: string
+      type: object
+    dmx.rdm.v1.ListParametersRequest:
+      description: Request message for DeviceService.ListParameters.
+      properties:
+        pageSize:
+          description: Maximum number of parameters to return; zero selects a default.
+          format: int32
+          type: integer
+        pageToken:
+          description: A page token from a previous ListParameters call.
+          type: string
+        parent:
+          description: 'The device whose parameters to list: the ones every device
+            supports, and those its SUPPORTED_PARAMETERS names. Format: universes/{universe}/devices/{device}'
+          type: string
+      type: object
+    dmx.rdm.v1.ListParametersResponse:
+      description: Response message for DeviceService.ListParameters.
+      properties:
+        nextPageToken:
+          description: Pass to the next ListParameters call; empty when there are
+            no more.
+          type: string
+        parameters:
+          description: 'The parameters, named, without data: GetParameter reads one.'
+          items:
+            description: 'A Parameter is one RDM parameter of a device, read and written
+              as the octets E1.20 or the manufacturer defines: the way to every PID
+              that Device does not name.'
+            properties:
+              data:
+                description: 'The parameter data: what a GET answered, or what a SET
+                  sends. At most what fits one RDM message, 231 octets, per write;
+                  a read may be longer, joined from overflow parts.'
+                format: byte
+                type: string
+              name:
+                description: 'The parameter''s name. Format: universes/{universe}/devices/{device}/parameters/{parameter}'
+                type: string
+              pid:
+                description: The parameter id.
+                format: int32
+                type: integer
+            type: object
+          type: array
+      type: object
+    dmx.rdm.v1.Parameter:
+      description: 'A Parameter is one RDM parameter of a device, read and written
+        as the octets E1.20 or the manufacturer defines: the way to every PID that
+        Device does not name.'
+      properties:
+        data:
+          description: 'The parameter data: what a GET answered, or what a SET sends.
+            At most what fits one RDM message, 231 octets, per write; a read may be
+            longer, joined from overflow parts.'
+          format: byte
+          type: string
+        name:
+          description: 'The parameter''s name. Format: universes/{universe}/devices/{device}/parameters/{parameter}'
+          type: string
+        pid:
+          description: The parameter id.
+          format: int32
+          type: integer
+      type: object
+    dmx.rdm.v1.UpdateDeviceRequest:
+      description: Request message for DeviceService.UpdateDevice.
+      properties:
+        device:
+          description: The device to update. Its name field identifies which.
+          properties:
+            discoverTime:
+              description: When discovery first found it.
+              format: date-time
+              type: string
+            displayName:
+              description: 'DEVICE_LABEL: a label the user gives it. Writable, up
+                to 32 octets.'
+              type: string
+            footprint:
+              description: Slots it uses in its current personality.
+              format: int32
+              type: integer
+            identifying:
+              description: 'IDENTIFY_DEVICE: whether it is showing itself — flashing,
+                moving. Writable.'
+              type: boolean
+            lastSeenTime:
+              description: When it last answered.
+              format: date-time
+              type: string
+            manufacturer:
+              description: MANUFACTURER_LABEL, where the device supports it.
+              type: string
+            manufacturerId:
+              description: The ESTA manufacturer id.
+              format: int32
+              type: integer
+            model:
+              description: DEVICE_MODEL_DESCRIPTION, where the device supports it.
+              type: string
+            modelId:
+              description: DEVICE_INFO's model id.
+              format: int32
+              type: integer
+            name:
+              description: 'The device''s name. Format: universes/{universe}/devices/{device}'
+              type: string
+            personality:
+              description: 'DMX_PERSONALITY: the current personality, from 1. Writable;
+                changing it changes what every slot means.'
+              format: int32
+              type: integer
+            personalityCount:
+              description: How many personalities it has.
+              format: int32
+              type: integer
+            productCategory:
+              description: DEVICE_INFO's product category.
+              format: int32
+              type: integer
+            rdmUid:
+              description: 'The RDM UID as RDM tools print it: `4c55:12345678`. Not
+                a UUID, which AIP-148''s `uid` would be.'
+              type: string
+            sensorCount:
+              description: How many sensors it has.
+              format: int32
+              type: integer
+            softwareVersion:
+              description: SOFTWARE_VERSION_LABEL.
+              type: string
+            softwareVersionId:
+              description: DEVICE_INFO's software version id.
+              format: int64
+              type: integer
+              x-kubernetes-int-or-string: true
+            startAddress:
+              description: 'DMX_START_ADDRESS: where its footprint starts, 1 to 512.
+                Writable; moving it re-patches the fixture.'
+              format: int32
+              type: integer
+            state:
+              description: Whether it answered last time.
+              enum:
+              - DEVICE_STATE_UNSPECIFIED
+              - DEVICE_STATE_RESPONDING
+              - DEVICE_STATE_SILENT
+              type: string
+            subDeviceCount:
+              description: How many sub-devices it has.
+              format: int32
+              type: integer
+          type: object
+        updateMask:
+          description: 'Fields to SET: display_name (DEVICE_LABEL), start_address
+            (DMX_START_ADDRESS), personality (DMX_PERSONALITY), identifying (IDENTIFY_DEVICE).
+            An empty mask sets every one of those that is set in `device`, as AIP-134
+            has it; name the field to set only that one.'
+          properties:
+            paths:
+              description: The set of field mask paths.
+              items:
+                type: string
+              type: array
+          type: object
+      type: object
+    dmx.rdm.v1.UpdateParameterRequest:
+      description: 'Request message for DeviceService.UpdateParameter: an RDM SET.'
+      properties:
+        parameter:
+          description: The parameter to set. Its name identifies which; its data is
+            sent as the SET's parameter data, at most 231 octets.
+          properties:
+            data:
+              description: 'The parameter data: what a GET answered, or what a SET
+                sends. At most what fits one RDM message, 231 octets, per write; a
+                read may be longer, joined from overflow parts.'
+              format: byte
+              type: string
+            name:
+              description: 'The parameter''s name. Format: universes/{universe}/devices/{device}/parameters/{parameter}'
+              type: string
+            pid:
+              description: The parameter id.
+              format: int32
+              type: integer
+          type: object
+        updateMask:
+          description: Only `data` may be written.
+          properties:
+            paths:
+              description: The set of field mask paths.
+              items:
+                type: string
+              type: array
+          type: object
+      type: object
+info:
+  title: OpenAPI Spec for Solo APIs.
+  version: v1
+openapi: 3.0.1
+paths: null

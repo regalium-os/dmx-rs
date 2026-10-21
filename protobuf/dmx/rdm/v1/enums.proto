@@ -1,0 +1,22 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.rdm.v1;
+
+option java_multiple_files = true;
+option java_outer_classname = "EnumsProto";
+option java_package = "dev.regalium.dmx.rdm.v1";
+
+// What this server last saw of an RDM device.
+enum DeviceState {
+  // Default, unused.
+  DEVICE_STATE_UNSPECIFIED = 0;
+
+  // It answered its last request.
+  DEVICE_STATE_RESPONDING = 1;
+
+  // It stopped answering: unplugged, powered off, or the line is broken.
+  DEVICE_STATE_SILENT = 2;
+}

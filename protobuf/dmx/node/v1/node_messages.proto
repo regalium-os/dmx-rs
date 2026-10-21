@@ -1,0 +1,126 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.node.v1;
+
+import "buf/validate/validate.proto";
+import "dmx/node/v1/enums.proto";
+import "dmx/node/v1/node.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/duration.proto";
+import "mcp/v1/annotations.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "NodeMessagesProto";
+option java_package = "dev.regalium.dmx.node.v1";
+
+// Request message for NodeService.GetNode.
+message GetNodeRequest {
+  // The node to read.
+  // Format: nodes/{node}
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "The node, as list_nodes names it."
+      examples: "nodes/artnet-10-0-0-5-1"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Node"
+  ];
+}
+
+// Request message for NodeService.ListNodes.
+message ListNodesRequest {
+  // Maximum number of nodes to return; zero selects a default.
+  int32 page_size = 1 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).int32 = {
+      gte: 0
+      lte: 1000
+    }
+  ];
+
+  // A page token from a previous ListNodes call.
+  string page_token = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Filter expression, AIP-160: `protocol = PROTOCOL_ARTNET`, or
+  // `state = NODE_STATE_UNREACHABLE`.
+  string filter = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Sort order, AIP-132. Defaults to name ascending.
+  string order_by = 4 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for NodeService.ListNodes.
+message ListNodesResponse {
+  // The nodes.
+  repeated Node nodes = 1;
+
+  // Pass to the next ListNodes call; empty when there are no more.
+  string next_page_token = 2;
+}
+
+// Request message for NodeService.DeleteNode.
+message DeleteNodeRequest {
+  // The node to forget. Nothing is sent to it, and it reappears when it
+  // next answers discovery.
+  // Format: nodes/{node}
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "The node to forget, as list_nodes names it."
+      examples: "nodes/serial-en123456"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Node"
+  ];
+}
+
+// Request message for NodeService.DiscoverNodes.
+//
+// Where an ArtPoll goes and which interfaces sACN discovery listens on are
+// the server's network configuration, not request fields: a caller who
+// could aim a poll could aim it at another show's network.
+message DiscoverNodesRequest {
+  // The protocols to discover on. Empty means every protocol the server
+  // runs.
+  repeated Protocol protocols = 1 [
+    (mcp.v1.field) = {
+      description: "Which protocols to discover on; empty for all."
+      examples: "PROTOCOL_ARTNET"
+    },
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).repeated.items.enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+
+  // Also probe serial ports that may be generic USB serial cables rather
+  // than widgets. The probe sends 11 octets of widget API requests, never
+  // DMX, but they reach whatever is on the cable.
+  bool probe_unidentified_ports = 2 [
+    (mcp.v1.field) = {
+      description: "Probe USB serial ports that do not say they are DMX widgets."
+      examples: "false"
+    },
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // How long to wait for answers. Defaults to three seconds; at most a
+  // minute.
+  google.protobuf.Duration wait = 3 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).duration = {
+      gte: {}
+      lte: {seconds: 60}
+    }
+  ];
+}
+
+// Response message for NodeService.DiscoverNodes.
+message DiscoverNodesResponse {
+  // Every node that answered, with what its answer carried.
+  repeated Node nodes = 1;
+}

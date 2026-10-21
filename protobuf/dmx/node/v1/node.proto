@@ -1,0 +1,95 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.node.v1;
+
+import "buf/validate/validate.proto";
+import "dmx/node/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "NodeProto";
+option java_package = "dev.regalium.dmx.node.v1";
+
+// A Node is one piece of equipment carrying universes: an Art-Net node that
+// answered ArtPoll, an sACN source that announced its universes, or a USB
+// widget that answered the serial probe.
+//
+// Nodes enter this collection by being discovered (DiscoverNodes) and are
+// never created through it: a node exists because it is on the network or
+// on the bus. Its ID is derived from what identifies it — an Art-Net
+// node's address and bind index, an sACN source's CID, a widget's serial
+// number — so it names the same equipment across restarts.
+message Node {
+  option (google.api.resource) = {
+    type: "dmx.regalium.dev/Node"
+    pattern: "nodes/{node}"
+    singular: "node"
+    plural: "nodes"
+  };
+
+  // The node's name.
+  // Format: nodes/{node}
+  string name = 1 [
+    (google.api.field_behavior) = IDENTIFIER,
+    (buf.validate.field).string.pattern = "^nodes/[a-z0-9][a-z0-9-]{0,62}$"
+  ];
+
+  // The transport it speaks.
+  Protocol protocol = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Its short name: Art-Net's ShortName, an sACN source name, a widget's
+  // product string.
+  string display_name = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Its long name: Art-Net's LongName.
+  string description = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Where it is reached: `10.0.0.5:6454` for Art-Net and sACN, the device
+  // path for a widget, `/dev/ttyUSB0`.
+  string address = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Its MAC address, `00:11:22:33:44:55`, where the protocol carries one.
+  string mac_address = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // An sACN source's CID, as a UUID; empty for other protocols.
+  string cid = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // A widget's serial number, as printed on it; empty for network nodes.
+  string serial_number = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Its firmware version, as the protocol reports it.
+  string firmware_version = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Its ports: up to four per Art-Net reply, one for a widget.
+  repeated Port ports = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Whether it answered last time.
+  NodeState state = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When it was first discovered.
+  google.protobuf.Timestamp discover_time = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When it last answered anything.
+  google.protobuf.Timestamp last_seen_time = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// One of a node's ports: a DMX512 line, and the universe it carries.
+message Port {
+  // The port's position on the node, from 1.
+  int32 index = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Which way it carries DMX512.
+  PortDirection direction = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The universe number it carries, as its protocol numbers universes: an
+  // Art-Net Port-Address, 0 to 32767; an sACN universe, 1 to 63999.
+  int32 universe_number = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Whether the node reports it merging more than one source.
+  bool merging = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

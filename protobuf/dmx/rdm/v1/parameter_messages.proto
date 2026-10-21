@@ -1,0 +1,78 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.rdm.v1;
+
+import "buf/validate/validate.proto";
+import "dmx/rdm/v1/parameter.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/field_mask.proto";
+import "mcp/v1/annotations.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "ParameterMessagesProto";
+option java_package = "dev.regalium.dmx.rdm.v1";
+
+// Request message for DeviceService.GetParameter: an RDM GET.
+message GetParameterRequest {
+  // The parameter to read.
+  // Format: universes/{universe}/devices/{device}/parameters/{parameter}
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "The parameter: the device's name, /parameters/, and the PID's standard name or pid-XXXX."
+      examples: "universes/stage-left/devices/4c55-12345678/parameters/device-info"
+      examples: "universes/stage-left/devices/4c55-12345678/parameters/pid-8123"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Parameter"
+  ];
+}
+
+// Request message for DeviceService.ListParameters.
+message ListParametersRequest {
+  // The device whose parameters to list: the ones every device supports,
+  // and those its SUPPORTED_PARAMETERS names.
+  // Format: universes/{universe}/devices/{device}
+  string parent = 1 [
+    (mcp.v1.field) = {
+      description: "The device, as list_devices names it."
+      examples: "universes/stage-left/devices/4c55-12345678"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).child_type = "dmx.regalium.dev/Parameter"
+  ];
+
+  // Maximum number of parameters to return; zero selects a default.
+  int32 page_size = 2 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).int32 = {
+      gte: 0
+      lte: 1000
+    }
+  ];
+
+  // A page token from a previous ListParameters call.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for DeviceService.ListParameters.
+message ListParametersResponse {
+  // The parameters, named, without data: GetParameter reads one.
+  repeated Parameter parameters = 1;
+
+  // Pass to the next ListParameters call; empty when there are no more.
+  string next_page_token = 2;
+}
+
+// Request message for DeviceService.UpdateParameter: an RDM SET.
+message UpdateParameterRequest {
+  // The parameter to set. Its name identifies which; its data is sent as
+  // the SET's parameter data, at most 231 octets.
+  Parameter parameter = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Only `data` may be written.
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
+}

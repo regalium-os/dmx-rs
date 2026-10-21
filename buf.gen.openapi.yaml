@@ -1,0 +1,51 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# The OpenAPI 3 description of the REST surface, from the protobuf module:
+# `just gen-openapi`. The layout follows shokki-engineering/freebusy:
+#
+#   protobuf/generated/openapi/openapi.yaml   paths and schemas, every service
+#   protobuf/generated/openapi/types/*.yaml   typed schemas, one per package
+#
+# freebusy writes one spec per service and merges them with a Go tool. Here
+# gnostic merges them itself (output_mode=merged, which needs strategy: all,
+# or each directory's run overwrites the last), so the repository needs no Go.
+#
+# Local plugins, for the reason the root buf.gen.yaml gives: the output is
+# committed. Both are in Homebrew: protoc-gen-openapi (gnostic) and
+# protoc-gen-openapi-solo.
+version: v2
+clean: true
+# gnostic wants a Go import path for every file; the schema declares none.
+managed:
+  enabled: true
+  disable:
+    - module: buf.build/googleapis/googleapis
+    - module: buf.build/bufbuild/protovalidate
+    - module: buf.build/the-protobuf-project/mcp
+  override:
+    - file_option: go_package_prefix
+      value: regalium.dev/dmx/gen
+inputs:
+  - directory: protobuf
+plugins:
+  # Every google.api.http rule as a path, its messages as schemas. Server
+  # streams are described by their message: OpenAPI cannot say "many".
+  # No commas in an option's value: buf splits options on them.
+  - local: protoc-gen-openapi
+    out: protobuf/generated/openapi
+    strategy: all
+    opt:
+      - output_mode=merged
+      - title=DMX API
+      - version=0.1.0
+      - description=The dmx-server REST/JSON API over the runtime
+  # The same messages as Solo's typed schemas, one file per package. Per
+  # file, as freebusy has it, every package's enums.proto would write the
+  # same types/enums.yaml and only the last would survive.
+  - local: protoc-gen-openapi-solo
+    out: protobuf/generated/openapi/types
+    opt:
+      - per_file=false
+      - yaml=true
+      - include_description=true

@@ -54,6 +54,16 @@ regalium-dmx-sim = { path = "tools/dmx-sim", version = "0.1.0" }
 # with no C and nothing linked; the deps gate checks.
 rustix = { version = "1.1.5", default-features = false, features = ["std", "termios", "event", "fs"] }
 
+# The schema crate's runtime: prost for the messages, and the well-known
+# types with protobuf's canonical JSON mapping and the runtime the generated
+# serde code uses, at the versions protoc-gen-prost-serde 0.4 targets, as in
+# bacnet-rs. They replace prost-types, whose messages they mirror.
+prost = { version = "0.14", default-features = false, features = ["std", "derive"] }
+pbjson = "0.9"
+pbjson-types = "0.9"
+serde = "1"
+serde_json = "1"
+
 # The the-protobuf-project telemetry SDK. Not on crates.io; pinned to the
 # exact commit bacnet-rs builds, so both drivers export through the same SDK
 # and an upstream push cannot change what builds here without a commit here

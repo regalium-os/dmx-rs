@@ -114,8 +114,17 @@ by the frame metrics. Slot levels are never a metric label or a series.
 
 ## Schemas
 
-`protobuf/` will be the source of truth, resource-oriented per Google AIP.
-Its design is open; see `docs/roadmap.md`, Phase 7.
+`protobuf/` is the source of truth, laid out as bacnet-rs's: per package a
+resource, its messages, its service and its enums. Resources first, standard
+methods (AIP-131 to 135) over them, custom methods (AIP-136) for the rest.
+
+- It must pass Google's AIP linter strictly, comment disables ignored:
+  `just api-lint`, and CI's `api-lint` workflow. A finding is fixed in
+  AIP's favour, never suppressed.
+- Every write carries an MCP elicitation saying what moves, and says it goes
+  through the output policy.
+- Everything generated is committed and reproducible: `just gen-all`, then
+  `just gen-check`. Never edit under `generated/`.
 
 ## Tests and phase gates
 

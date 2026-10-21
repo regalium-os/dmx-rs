@@ -1,0 +1,122 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.universe.v1;
+
+import "buf/validate/validate.proto";
+import "dmx/universe/v1/levels.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/field_mask.proto";
+import "mcp/v1/annotations.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "LevelsMessagesProto";
+option java_package = "dev.regalium.dmx.universe.v1";
+
+// Request message for UniverseService.GetLevels.
+message GetLevelsRequest {
+  // The levels to read.
+  // Format: universes/{universe}/levels
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "The universe's levels: its name and /levels."
+      examples: "universes/stage-left/levels"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Levels"
+  ];
+}
+
+// Request message for UniverseService.UpdateLevels: every slot at once.
+message UpdateLevelsRequest {
+  // The levels to send. Their name identifies the output universe, and
+  // the slots' count becomes how many are sent.
+  Levels levels = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Only `slots` may be written.
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Request message for UniverseService.WriteLevels: a run of slots from one
+// address, the rest unchanged.
+message WriteLevelsRequest {
+  // The levels to write into.
+  // Format: universes/{universe}/levels
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "The output universe's levels."
+      examples: "universes/stage-left/levels"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Levels"
+  ];
+
+  // The first slot written, 1 to 512.
+  int32 start_address = 2 [
+    (mcp.v1.field) = {
+      description: "The DMX address of the first level, 1 to 512."
+      examples: "1"
+      examples: "101"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).int32 = {
+      gte: 1
+      lte: 512
+    }
+  ];
+
+  // The levels, 0 to 255, for consecutive slots from start_address. All
+  // or nothing: a run past slot 512 is refused, and nothing is written.
+  repeated int32 values = 3 [
+    (mcp.v1.field) = {
+      description: "Levels 0 to 255 for consecutive addresses from start_address."
+      examples: "[255, 128, 0]"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).repeated = {
+      min_items: 1
+      max_items: 512
+      items: {
+        int32: {
+          gte: 0
+          lte: 255
+        }
+      }
+    }
+  ];
+}
+
+// Request message for UniverseService.StreamLevels.
+message StreamLevelsRequest {
+  // The levels to watch: an output's or an input's.
+  // Format: universes/{universe}/levels
+  string name = 1 [
+    (mcp.v1.field) = {
+      description: "The universe's levels to watch."
+      examples: "universes/foh-in/levels"
+    },
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "dmx.regalium.dev/Levels"
+  ];
+
+  // The shortest time between two responses. Levels move at up to 44 Hz;
+  // a display rarely needs more than 10. Defaults to 100 ms; at least 25.
+  google.protobuf.Duration interval = 2 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).duration = {
+      gte: {nanos: 25000000}
+      lte: {seconds: 60}
+    }
+  ];
+}
+
+// Response message for UniverseService.StreamLevels: the levels whenever
+// they have changed, no more often than asked.
+message StreamLevelsResponse {
+  // The levels as they now stand.
+  Levels levels = 1;
+}

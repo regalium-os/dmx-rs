@@ -5,6 +5,8 @@
 # the same claim. Anything CI does that is not a recipe here is a way for the
 # two to drift apart.
 
+import 'codegen.just'
+
 default:
     @just --list
 

@@ -1,0 +1,115 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.rdm.v1;
+
+import "buf/validate/validate.proto";
+import "dmx/rdm/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "DeviceProto";
+option java_package = "dev.regalium.dmx.rdm.v1";
+
+// A Device is one RDM responder on a universe's line: a fixture, a dimmer,
+// a splitter (ANSI E1.20).
+//
+// Devices enter this collection by RDM discovery (DiscoverDevices) and are
+// never created through it. The ID is the device's UID, manufacturer and
+// device ids in hexadecimal joined by a hyphen: `4c55-12345678`. Reading
+// one asks the device; nothing here is served stale.
+message Device {
+  option (google.api.resource) = {
+    type: "dmx.regalium.dev/Device"
+    pattern: "universes/{universe}/devices/{device}"
+    singular: "device"
+    plural: "devices"
+  };
+
+  // The device's name.
+  // Format: universes/{universe}/devices/{device}
+  string name = 1 [
+    (google.api.field_behavior) = IDENTIFIER,
+    (buf.validate.field).string.pattern = "^universes/[a-z][a-z0-9-]{0,62}/devices/[0-9a-f]{4}-[0-9a-f]{8}$"
+  ];
+
+  // The RDM UID as RDM tools print it: `4c55:12345678`. Not a UUID,
+  // which AIP-148's `uid` would be.
+  string rdm_uid = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // DEVICE_LABEL: a label the user gives it. Writable, up to 32 octets.
+  string display_name = 3 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).string.max_bytes = 32
+  ];
+
+  // The ESTA manufacturer id.
+  int32 manufacturer_id = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // MANUFACTURER_LABEL, where the device supports it.
+  string manufacturer = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // DEVICE_INFO's model id.
+  int32 model_id = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // DEVICE_MODEL_DESCRIPTION, where the device supports it.
+  string model = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // DEVICE_INFO's product category.
+  int32 product_category = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // DEVICE_INFO's software version id.
+  int64 software_version_id = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // SOFTWARE_VERSION_LABEL.
+  string software_version = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // DMX_START_ADDRESS: where its footprint starts, 1 to 512. Writable;
+  // moving it re-patches the fixture.
+  int32 start_address = 11 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).int32 = {
+      gte: 1
+      lte: 512
+    }
+  ];
+
+  // Slots it uses in its current personality.
+  int32 footprint = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // DMX_PERSONALITY: the current personality, from 1. Writable; changing
+  // it changes what every slot means.
+  int32 personality = 13 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).int32 = {
+      gte: 1
+      lte: 255
+    }
+  ];
+
+  // How many personalities it has.
+  int32 personality_count = 14 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // How many sub-devices it has.
+  int32 sub_device_count = 15 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // How many sensors it has.
+  int32 sensor_count = 16 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // IDENTIFY_DEVICE: whether it is showing itself — flashing, moving.
+  // Writable.
+  bool identifying = 17 [(google.api.field_behavior) = OPTIONAL];
+
+  // Whether it answered last time.
+  DeviceState state = 18 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When discovery first found it.
+  google.protobuf.Timestamp discover_time = 19 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When it last answered.
+  google.protobuf.Timestamp last_seen_time = 20 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

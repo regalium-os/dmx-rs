@@ -1,0 +1,1603 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: DMX API
+    description: The dmx-server REST/JSON API over the runtime
+    version: 0.1.0
+servers:
+    - url: https://dmx.regalium.dev
+paths:
+    /v1/nodes:
+        get:
+            tags:
+                - NodeService
+            description: Lists the nodes discovery has found, reachable or not.
+            summary: List Nodes
+            operationId: NodeService_ListNodes
+            parameters:
+                - name: pageSize
+                  in: query
+                  description: Maximum number of nodes to return; zero selects a default.
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  description: A page token from a previous ListNodes call.
+                  schema:
+                    type: string
+                - name: filter
+                  in: query
+                  description: |-
+                    Filter expression, AIP-160: `protocol = PROTOCOL_ARTNET`, or
+                     `state = NODE_STATE_UNREACHABLE`.
+                  schema:
+                    type: string
+                - name: orderBy
+                  in: query
+                  description: Sort order, AIP-132. Defaults to name ascending.
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListNodesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/nodes/{node}:
+        get:
+            tags:
+                - NodeService
+            description: Reads one node, as it last described itself.
+            summary: Get Node
+            operationId: NodeService_GetNode
+            parameters:
+                - name: node
+                  in: path
+                  description: The node id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Node'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+        delete:
+            tags:
+                - NodeService
+            description: Forgets a node. Nothing is sent to it.
+            summary: Delete Node
+            operationId: NodeService_DeleteNode
+            parameters:
+                - name: node
+                  in: path
+                  description: The node id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/nodes:discover:
+        post:
+            tags:
+                - NodeService
+            description: |-
+                Discovers nodes: ArtPoll on Art-Net, the universe discovery sources
+                 announce on sACN, and the safe probe on serial ports. Never sends DMX.
+                 Returns the nodes that answered, adding them to the collection.
+            summary: Discover Nodes
+            operationId: NodeService_DiscoverNodes
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DiscoverNodesRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DiscoverNodesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/policy:
+        get:
+            tags:
+                - ServerService
+            description: |-
+                Reads the output policy: blackout, hold, master, and whether MCP may
+                 write.
+            summary: Get Policy
+            operationId: ServerService_GetPolicy
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Policy'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+        patch:
+            tags:
+                - ServerService
+            description: |-
+                Changes the output policy. Blackout and hold act on every output at
+                 once.
+            summary: Update Policy
+            operationId: ServerService_UpdatePolicy
+            parameters:
+                - name: updateMask
+                  in: query
+                  description: 'Fields to change: blackout, hold, master.'
+                  schema:
+                    type: string
+                    format: field-mask
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/Policy'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Policy'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/serverStatus:
+        get:
+            tags:
+                - ServerService
+            description: Reads the server's status.
+            summary: Get Server Status
+            operationId: ServerService_GetServerStatus
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ServerStatus'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/universes:
+        get:
+            tags:
+                - UniverseService
+            description: Lists the universes this server sends and receives.
+            summary: List Universes
+            operationId: UniverseService_ListUniverses
+            parameters:
+                - name: pageSize
+                  in: query
+                  description: Maximum number of universes to return; zero selects a default.
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  description: A page token from a previous ListUniverses call.
+                  schema:
+                    type: string
+                - name: filter
+                  in: query
+                  description: |-
+                    Filter expression, AIP-160: `protocol = PROTOCOL_SACN`, or
+                     `state = UNIVERSE_STATE_FAILING`.
+                  schema:
+                    type: string
+                - name: orderBy
+                  in: query
+                  description: Sort order, AIP-132. Defaults to name ascending.
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListUniversesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+        post:
+            tags:
+                - UniverseService
+            description: |-
+                Creates a universe: patches an output, which starts sending dark at
+                 once, or listens to an input.
+            summary: Create Universe
+            operationId: UniverseService_CreateUniverse
+            parameters:
+                - name: universeId
+                  in: query
+                  description: |-
+                    The ID to give it, which becomes the last part of its name: lower
+                     case, digits and hyphens, starting with a letter.
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/Universe'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Universe'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/universes/{universe}:
+        get:
+            tags:
+                - UniverseService
+            description: 'Reads one universe: its role, state and, for an input, its sources.'
+            summary: Get Universe
+            operationId: UniverseService_GetUniverse
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Universe'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+        delete:
+            tags:
+                - UniverseService
+            description: |-
+                Stops a universe. Its fixtures hold their last levels or go dark, as
+                 each is built to when its source goes away.
+            summary: Delete Universe
+            operationId: UniverseService_DeleteUniverse
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+        patch:
+            tags:
+                - UniverseService
+            description: Changes a universe's label, refresh, priority or merge.
+            summary: Update Universe
+            operationId: UniverseService_UpdateUniverse
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+                - name: updateMask
+                  in: query
+                  description: |-
+                    Fields to change: display_name, and the output's refresh and priority
+                     or the input's merge mode and source limit. Protocol, number and node
+                     are fixed: a different one is a different universe.
+                  schema:
+                    type: string
+                    format: field-mask
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/Universe'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Universe'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/universes/{universe}/devices:
+        get:
+            tags:
+                - DeviceService
+            description: Lists the devices discovery found on a universe.
+            summary: List Devices
+            operationId: DeviceService_ListDevices
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  description: Maximum number of devices to return; zero selects a default.
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  description: A page token from a previous ListDevices call.
+                  schema:
+                    type: string
+                - name: filter
+                  in: query
+                  description: |-
+                    Filter expression, AIP-160: `manufacturer_id = 19541`, or
+                     `state = DEVICE_STATE_SILENT`.
+                  schema:
+                    type: string
+                - name: orderBy
+                  in: query
+                  description: Sort order, AIP-132. Defaults to UID ascending.
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListDevicesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/universes/{universe}/devices/{device}:
+        get:
+            tags:
+                - DeviceService
+            description: 'Reads one device: DEVICE_INFO and its labels.'
+            summary: Get Device
+            operationId: DeviceService_GetDevice
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+                - name: device
+                  in: path
+                  description: The device id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Device'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+        delete:
+            tags:
+                - DeviceService
+            description: Forgets a device. Nothing is sent to it.
+            summary: Delete Device
+            operationId: DeviceService_DeleteDevice
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+                - name: device
+                  in: path
+                  description: The device id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+        patch:
+            tags:
+                - DeviceService
+            description: |-
+                Sets a device's label, start address, personality or identify, then
+                 reads them back, so the reply is what the device kept.
+            summary: Update Device
+            operationId: DeviceService_UpdateDevice
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+                - name: device
+                  in: path
+                  description: The device id.
+                  required: true
+                  schema:
+                    type: string
+                - name: updateMask
+                  in: query
+                  description: |-
+                    Fields to SET: display_name (DEVICE_LABEL), start_address
+                     (DMX_START_ADDRESS), personality (DMX_PERSONALITY), identifying
+                     (IDENTIFY_DEVICE). An empty mask sets every one of those that is set
+                     in `device`, as AIP-134 has it; name the field to set only that one.
+                  schema:
+                    type: string
+                    format: field-mask
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/Device'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Device'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/universes/{universe}/devices/{device}/parameters:
+        get:
+            tags:
+                - DeviceService
+            description: |-
+                Lists a device's parameters: the required ones, and those
+                 SUPPORTED_PARAMETERS names.
+            summary: List Parameters
+            operationId: DeviceService_ListParameters
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+                - name: device
+                  in: path
+                  description: The device id.
+                  required: true
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  description: Maximum number of parameters to return; zero selects a default.
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  description: A page token from a previous ListParameters call.
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListParametersResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/universes/{universe}/devices/{device}/parameters/{parameter}:
+        get:
+            tags:
+                - DeviceService
+            description: 'Reads one parameter: an RDM GET, its answer as octets.'
+            summary: Get Parameter
+            operationId: DeviceService_GetParameter
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+                - name: device
+                  in: path
+                  description: The device id.
+                  required: true
+                  schema:
+                    type: string
+                - name: parameter
+                  in: path
+                  description: The parameter id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Parameter'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+        patch:
+            tags:
+                - DeviceService
+            description: 'Sets one parameter: an RDM SET of the octets given.'
+            summary: Update Parameter
+            operationId: DeviceService_UpdateParameter
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+                - name: device
+                  in: path
+                  description: The device id.
+                  required: true
+                  schema:
+                    type: string
+                - name: parameter
+                  in: path
+                  description: The parameter id.
+                  required: true
+                  schema:
+                    type: string
+                - name: updateMask
+                  in: query
+                  description: Only `data` may be written.
+                  schema:
+                    type: string
+                    format: field-mask
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/Parameter'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Parameter'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/universes/{universe}/devices:discover:
+        post:
+            tags:
+                - DeviceService
+            description: |-
+                Finds every RDM device on a universe's line and adds them to the
+                 collection. Discovery mutes and un-mutes devices, which pauses nothing
+                 a fixture shows, but takes the line for a few seconds.
+            summary: Discover Devices
+            operationId: DeviceService_DiscoverDevices
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DiscoverDevicesRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DiscoverDevicesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/universes/{universe}/levels:
+        get:
+            tags:
+                - UniverseService
+            description: Reads a universe's levels as they stand.
+            summary: Get Levels
+            operationId: UniverseService_GetLevels
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Levels'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+        patch:
+            tags:
+                - UniverseService
+            description: Replaces an output's levels, every slot at once.
+            summary: Update Levels
+            operationId: UniverseService_UpdateLevels
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+                - name: updateMask
+                  in: query
+                  description: Only `slots` may be written.
+                  schema:
+                    type: string
+                    format: field-mask
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/Levels'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Levels'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/universes/{universe}/levels:stream:
+        post:
+            tags:
+                - UniverseService
+            description: |-
+                Streams a universe's levels whenever they change, no more often than
+                 asked, until the caller cancels.
+            summary: Stream Levels
+            operationId: UniverseService_StreamLevels
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/StreamLevelsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/StreamLevelsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/universes/{universe}/levels:write:
+        post:
+            tags:
+                - UniverseService
+            description: |-
+                Writes a run of an output's levels from one address, the rest
+                 unchanged: what a person means by "channel 101 to full".
+            summary: Write Levels
+            operationId: UniverseService_WriteLevels
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/WriteLevelsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Levels'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/universes/{universe}:blackout:
+        post:
+            tags:
+                - UniverseService
+            description: |-
+                Takes an output universe dark: every slot to 0, at its current length.
+                 GetLevels then reads the zeros.
+            summary: Blackout Universe
+            operationId: UniverseService_BlackoutUniverse
+            parameters:
+                - name: universe
+                  in: path
+                  description: The universe id.
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/BlackoutUniverseRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Universe'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+components:
+    schemas:
+        BlackoutUniverseRequest:
+            required:
+                - name
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The output universe to take dark: every slot to 0, at its current
+                         length.
+                         Format: universes/{universe}
+            description: Request message for UniverseService.BlackoutUniverse.
+        Device:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The device's name.
+                         Format: universes/{universe}/devices/{device}
+                rdmUid:
+                    readOnly: true
+                    type: string
+                    description: |-
+                        The RDM UID as RDM tools print it: `4c55:12345678`. Not a UUID,
+                         which AIP-148's `uid` would be.
+                displayName:
+                    type: string
+                    description: 'DEVICE_LABEL: a label the user gives it. Writable, up to 32 octets.'
+                manufacturerId:
+                    readOnly: true
+                    type: integer
+                    description: The ESTA manufacturer id.
+                    format: int32
+                manufacturer:
+                    readOnly: true
+                    type: string
+                    description: MANUFACTURER_LABEL, where the device supports it.
+                modelId:
+                    readOnly: true
+                    type: integer
+                    description: DEVICE_INFO's model id.
+                    format: int32
+                model:
+                    readOnly: true
+                    type: string
+                    description: DEVICE_MODEL_DESCRIPTION, where the device supports it.
+                productCategory:
+                    readOnly: true
+                    type: integer
+                    description: DEVICE_INFO's product category.
+                    format: int32
+                softwareVersionId:
+                    readOnly: true
+                    type: string
+                    description: DEVICE_INFO's software version id.
+                softwareVersion:
+                    readOnly: true
+                    type: string
+                    description: SOFTWARE_VERSION_LABEL.
+                startAddress:
+                    type: integer
+                    description: |-
+                        DMX_START_ADDRESS: where its footprint starts, 1 to 512. Writable;
+                         moving it re-patches the fixture.
+                    format: int32
+                footprint:
+                    readOnly: true
+                    type: integer
+                    description: Slots it uses in its current personality.
+                    format: int32
+                personality:
+                    type: integer
+                    description: |-
+                        DMX_PERSONALITY: the current personality, from 1. Writable; changing
+                         it changes what every slot means.
+                    format: int32
+                personalityCount:
+                    readOnly: true
+                    type: integer
+                    description: How many personalities it has.
+                    format: int32
+                subDeviceCount:
+                    readOnly: true
+                    type: integer
+                    description: How many sub-devices it has.
+                    format: int32
+                sensorCount:
+                    readOnly: true
+                    type: integer
+                    description: How many sensors it has.
+                    format: int32
+                identifying:
+                    type: boolean
+                    description: |-
+                        IDENTIFY_DEVICE: whether it is showing itself — flashing, moving.
+                         Writable.
+                state:
+                    readOnly: true
+                    type: integer
+                    description: Whether it answered last time.
+                    format: enum
+                discoverTime:
+                    readOnly: true
+                    type: string
+                    description: When discovery first found it.
+                    format: date-time
+                lastSeenTime:
+                    readOnly: true
+                    type: string
+                    description: When it last answered.
+                    format: date-time
+            description: |-
+                A Device is one RDM responder on a universe's line: a fixture, a dimmer,
+                 a splitter (ANSI E1.20).
+
+                 Devices enter this collection by RDM discovery (DiscoverDevices) and are
+                 never created through it. The ID is the device's UID, manufacturer and
+                 device ids in hexadecimal joined by a hyphen: `4c55-12345678`. Reading
+                 one asks the device; nothing here is served stale.
+        DiscoverDevicesRequest:
+            required:
+                - parent
+            type: object
+            properties:
+                parent:
+                    type: string
+                    description: |-
+                        The universe whose line to search: by binary search on a serial line,
+                         or from the node's own table on Art-Net.
+                         Format: universes/{universe}
+            description: Request message for DeviceService.DiscoverDevices.
+        DiscoverDevicesResponse:
+            type: object
+            properties:
+                devices:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Device'
+                    description: |-
+                        Every device found, in UID order, with only its UID read; GetDevice
+                         reads the rest.
+                incomplete:
+                    type: boolean
+                    description: |-
+                        Whether the search gave up before covering the whole UID range: a line
+                         so noisy every answer collided. The devices found are still listed.
+            description: Response message for DeviceService.DiscoverDevices.
+        DiscoverNodesRequest:
+            type: object
+            properties:
+                protocols:
+                    type: array
+                    items:
+                        type: integer
+                        format: enum
+                    description: |-
+                        The protocols to discover on. Empty means every protocol the server
+                         runs.
+                probeUnidentifiedPorts:
+                    type: boolean
+                    description: |-
+                        Also probe serial ports that may be generic USB serial cables rather
+                         than widgets. The probe sends 11 octets of widget API requests, never
+                         DMX, but they reach whatever is on the cable.
+                wait:
+                    pattern: ^-?(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,9})?s$
+                    type: string
+                    description: |-
+                        How long to wait for answers. Defaults to three seconds; at most a
+                         minute.
+            description: |-
+                Request message for NodeService.DiscoverNodes.
+
+                 Where an ArtPoll goes and which interfaces sACN discovery listens on are
+                 the server's network configuration, not request fields: a caller who
+                 could aim a poll could aim it at another show's network.
+        DiscoverNodesResponse:
+            type: object
+            properties:
+                nodes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Node'
+                    description: Every node that answered, with what its answer carried.
+            description: Response message for NodeService.DiscoverNodes.
+        GoogleProtobufAny:
+            type: object
+            properties:
+                '@type':
+                    type: string
+                    description: The type of the serialized message.
+            additionalProperties: true
+            description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
+        Input:
+            required:
+                - mergeMode
+            type: object
+            properties:
+                mergeMode:
+                    type: integer
+                    description: HTP or LTP, among the sources at the highest priority present.
+                    format: enum
+                maxSources:
+                    type: integer
+                    description: The most sources merged at once; more are refused. Defaults to 8.
+                    format: int32
+                sources:
+                    readOnly: true
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Source'
+                    description: The sources merged now.
+            description: How an input universe merges its sources.
+        Levels:
+            required:
+                - slots
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The levels' name.
+                         Format: universes/{universe}/levels
+                slots:
+                    type: string
+                    description: |-
+                        The slots, one octet each, from slot 1: 0 to 512 of them. Their count
+                         is how many slots are sent.
+                    format: bytes
+                generation:
+                    readOnly: true
+                    type: string
+                    description: |-
+                        A counter that moves exactly when the levels a receiver would see
+                         change, so a reader polling can tell a change from a repeat.
+                updateTime:
+                    readOnly: true
+                    type: string
+                    description: When they last changed.
+                    format: date-time
+            description: |-
+                Levels are a universe's 512 slots as they stand: for an output, what is
+                 being sent; for an input, what the merge makes of its sources.
+
+                 A singleton under its universe (AIP-156). Written through UpdateLevels or
+                 WriteLevels, and only for an output: both go through the server's output
+                 policy, which can hold or black out what is written.
+        ListDevicesResponse:
+            type: object
+            properties:
+                devices:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Device'
+                    description: The devices, as discovery and the last reads left them.
+                nextPageToken:
+                    type: string
+                    description: Pass to the next ListDevices call; empty when there are no more.
+            description: Response message for DeviceService.ListDevices.
+        ListNodesResponse:
+            type: object
+            properties:
+                nodes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Node'
+                    description: The nodes.
+                nextPageToken:
+                    type: string
+                    description: Pass to the next ListNodes call; empty when there are no more.
+            description: Response message for NodeService.ListNodes.
+        ListParametersResponse:
+            type: object
+            properties:
+                parameters:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Parameter'
+                    description: 'The parameters, named, without data: GetParameter reads one.'
+                nextPageToken:
+                    type: string
+                    description: Pass to the next ListParameters call; empty when there are no more.
+            description: Response message for DeviceService.ListParameters.
+        ListUniversesResponse:
+            type: object
+            properties:
+                universes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Universe'
+                    description: The universes.
+                nextPageToken:
+                    type: string
+                    description: Pass to the next ListUniverses call; empty when there are no more.
+            description: Response message for UniverseService.ListUniverses.
+        Node:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The node's name.
+                         Format: nodes/{node}
+                protocol:
+                    readOnly: true
+                    type: integer
+                    description: The transport it speaks.
+                    format: enum
+                displayName:
+                    readOnly: true
+                    type: string
+                    description: |-
+                        Its short name: Art-Net's ShortName, an sACN source name, a widget's
+                         product string.
+                description:
+                    readOnly: true
+                    type: string
+                    description: 'Its long name: Art-Net''s LongName.'
+                address:
+                    readOnly: true
+                    type: string
+                    description: |-
+                        Where it is reached: `10.0.0.5:6454` for Art-Net and sACN, the device
+                         path for a widget, `/dev/ttyUSB0`.
+                macAddress:
+                    readOnly: true
+                    type: string
+                    description: Its MAC address, `00:11:22:33:44:55`, where the protocol carries one.
+                cid:
+                    readOnly: true
+                    type: string
+                    description: An sACN source's CID, as a UUID; empty for other protocols.
+                serialNumber:
+                    readOnly: true
+                    type: string
+                    description: A widget's serial number, as printed on it; empty for network nodes.
+                firmwareVersion:
+                    readOnly: true
+                    type: string
+                    description: Its firmware version, as the protocol reports it.
+                ports:
+                    readOnly: true
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Port'
+                    description: 'Its ports: up to four per Art-Net reply, one for a widget.'
+                state:
+                    readOnly: true
+                    type: integer
+                    description: Whether it answered last time.
+                    format: enum
+                discoverTime:
+                    readOnly: true
+                    type: string
+                    description: When it was first discovered.
+                    format: date-time
+                lastSeenTime:
+                    readOnly: true
+                    type: string
+                    description: When it last answered anything.
+                    format: date-time
+            description: |-
+                A Node is one piece of equipment carrying universes: an Art-Net node that
+                 answered ArtPoll, an sACN source that announced its universes, or a USB
+                 widget that answered the serial probe.
+
+                 Nodes enter this collection by being discovered (DiscoverNodes) and are
+                 never created through it: a node exists because it is on the network or
+                 on the bus. Its ID is derived from what identifies it — an Art-Net
+                 node's address and bind index, an sACN source's CID, a widget's serial
+                 number — so it names the same equipment across restarts.
+        Output:
+            type: object
+            properties:
+                interval:
+                    pattern: ^-?(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,9})?s$
+                    type: string
+                    description: |-
+                        The shortest time between packets: about 23 ms, 44 Hz, at full rate.
+                         Unset, the transport's own.
+                keepAlive:
+                    pattern: ^-?(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,9})?s$
+                    type: string
+                    description: |-
+                        How often unchanged levels are resent. Unset, the transport's own: one
+                         second on the network, every interval on a raw line.
+                priority:
+                    type: integer
+                    description: 'For sACN, the priority sent with every packet: 0 to 200, 100 unset.'
+                    format: int32
+            description: How an output universe is refreshed.
+        Parameter:
+            required:
+                - data
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The parameter's name.
+                         Format: universes/{universe}/devices/{device}/parameters/{parameter}
+                pid:
+                    readOnly: true
+                    type: integer
+                    description: The parameter id.
+                    format: int32
+                data:
+                    type: string
+                    description: |-
+                        The parameter data: what a GET answered, or what a SET sends. At most
+                         what fits one RDM message, 231 octets, per write; a read may be longer,
+                         joined from overflow parts.
+                    format: bytes
+            description: |-
+                A Parameter is one RDM parameter of a device, read and written as the
+                 octets E1.20 or the manufacturer defines: the way to every PID that
+                 Device does not name.
+
+                 The ID is the standard's name in lower case with hyphens,
+                 `dmx-start-address`, `sensor-value`, or `pid-` and four hexadecimal
+                 digits for any other, `pid-8123`.
+        Policy:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: 'The policy''s name: always `policy`.'
+                blackout:
+                    type: boolean
+                    description: Every output sends zeros, whatever its levels.
+                hold:
+                    type: boolean
+                    description: |-
+                        Every output keeps sending what it sent when hold began, and writes
+                         wait, as a console's freeze does.
+                master:
+                    type: integer
+                    description: |-
+                        The grand master: every level is scaled by master / 255 on its way
+                         out. 255, full, unless set.
+                    format: int32
+                mcpWritesAllowed:
+                    readOnly: true
+                    type: boolean
+                    description: |-
+                        Whether MCP clients may write: set by the server's --allow-writes
+                         flag, and never through this API.
+                updateTime:
+                    readOnly: true
+                    type: string
+                    description: When it last changed.
+                    format: date-time
+            description: |-
+                The Policy is the one output safety policy every write passes through:
+                 levels from any surface, and RDM SETs. No surface has its own.
+
+                 A singleton. Blackout and hold act on every output universe at once, at
+                 the output, after whatever was written: a write that arrives during
+                 blackout is kept, and goes out when blackout ends.
+        Port:
+            type: object
+            properties:
+                index:
+                    readOnly: true
+                    type: integer
+                    description: The port's position on the node, from 1.
+                    format: int32
+                direction:
+                    readOnly: true
+                    type: integer
+                    description: Which way it carries DMX512.
+                    format: enum
+                universeNumber:
+                    readOnly: true
+                    type: integer
+                    description: |-
+                        The universe number it carries, as its protocol numbers universes: an
+                         Art-Net Port-Address, 0 to 32767; an sACN universe, 1 to 63999.
+                    format: int32
+                merging:
+                    readOnly: true
+                    type: boolean
+                    description: Whether the node reports it merging more than one source.
+            description: 'One of a node''s ports: a DMX512 line, and the universe it carries.'
+        ServerStatus:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: 'The status''s name: always `serverStatus`.'
+                version:
+                    readOnly: true
+                    type: string
+                    description: The server's version.
+                startTime:
+                    readOnly: true
+                    type: string
+                    description: When it started.
+                    format: date-time
+                outputCount:
+                    readOnly: true
+                    type: integer
+                    description: Output universes it sends.
+                    format: int32
+                inputCount:
+                    readOnly: true
+                    type: integer
+                    description: Input universes it merges.
+                    format: int32
+                nodeCount:
+                    readOnly: true
+                    type: integer
+                    description: Nodes discovery has found.
+                    format: int32
+                deviceCount:
+                    readOnly: true
+                    type: integer
+                    description: RDM devices discovery has found, across universes.
+                    format: int32
+            description: The server, as it is now. A singleton.
+        Source:
+            type: object
+            properties:
+                id:
+                    readOnly: true
+                    type: string
+                    description: 'Who it is: an Art-Net sender''s address, `10.0.0.9:6454`; an sACN CID.'
+                displayName:
+                    readOnly: true
+                    type: string
+                    description: 'Its name, where the protocol carries one: an sACN source name.'
+                priority:
+                    readOnly: true
+                    type: integer
+                    description: 'Its priority: 0 to 200, 100 for Art-Net, which has none.'
+                    format: int32
+                merged:
+                    readOnly: true
+                    type: boolean
+                    description: |-
+                        Whether it is at the highest priority present, and so merged rather
+                         than held.
+                lastSeenTime:
+                    readOnly: true
+                    type: string
+                    description: When its last packet arrived.
+                    format: date-time
+            description: One source an input is merging.
+        Status:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    description: The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
+                    format: int32
+                message:
+                    type: string
+                    description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
+                details:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/GoogleProtobufAny'
+                    description: A list of messages that carry the error details.  There is a common set of message types for APIs to use.
+            description: 'The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors).'
+        StreamLevelsRequest:
+            required:
+                - name
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The levels to watch: an output's or an input's.
+                         Format: universes/{universe}/levels
+                interval:
+                    pattern: ^-?(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,9})?s$
+                    type: string
+                    description: |-
+                        The shortest time between two responses. Levels move at up to 44 Hz;
+                         a display rarely needs more than 10. Defaults to 100 ms; at least 25.
+            description: Request message for UniverseService.StreamLevels.
+        StreamLevelsResponse:
+            type: object
+            properties:
+                levels:
+                    allOf:
+                        - $ref: '#/components/schemas/Levels'
+                    description: The levels as they now stand.
+            description: |-
+                Response message for UniverseService.StreamLevels: the levels whenever
+                 they have changed, no more often than asked.
+        Universe:
+            required:
+                - protocol
+                - number
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The universe's name.
+                         Format: universes/{universe}
+                displayName:
+                    type: string
+                    description: A label for people.
+                protocol:
+                    type: integer
+                    description: The transport it travels on.
+                    format: enum
+                number:
+                    type: integer
+                    description: |-
+                        The universe number, as the protocol numbers universes: an Art-Net
+                         Port-Address, 0 to 32767; an sACN universe, 1 to 63999; 1 on a serial
+                         line.
+                    format: int32
+                node:
+                    type: string
+                    description: |-
+                        The node it is carried by: required for a serial line, which is one
+                         widget's; for Art-Net and sACN, where the network carries it, empty.
+                         Format: nodes/{node}
+                output:
+                    allOf:
+                        - $ref: '#/components/schemas/Output'
+                    description: Sent, refreshed by this policy.
+                input:
+                    allOf:
+                        - $ref: '#/components/schemas/Input'
+                    description: Received, and merged.
+                state:
+                    readOnly: true
+                    type: integer
+                    description: What it is doing now.
+                    format: enum
+                slotCount:
+                    readOnly: true
+                    type: integer
+                    description: How many slots it carries, 0 to 512.
+                    format: int32
+                createTime:
+                    readOnly: true
+                    type: string
+                    description: When it was created.
+                    format: date-time
+            description: |-
+                A Universe is 512 slots of DMX512 on one transport, and what this server
+                 does with them: sends them, as an output, or merges what arrives, as an
+                 input.
+
+                 Creating one patches an output or listens to an input; deleting one stops
+                 it, and an sACN output says so to its receivers. Its ID is the caller's:
+                 `stage-left`, `foh-1`.
+        WriteLevelsRequest:
+            required:
+                - name
+                - startAddress
+                - values
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: |-
+                        The levels to write into.
+                         Format: universes/{universe}/levels
+                startAddress:
+                    type: integer
+                    description: The first slot written, 1 to 512.
+                    format: int32
+                values:
+                    type: array
+                    items:
+                        type: integer
+                        format: int32
+                    description: |-
+                        The levels, 0 to 255, for consecutive slots from start_address. All
+                         or nothing: a run past slot 512 is refused, and nothing is written.
+            description: |-
+                Request message for UniverseService.WriteLevels: a run of slots from one
+                 address, the rest unchanged.
+tags:
+    - name: DeviceService
+      description: |-
+        DeviceService finds the RDM devices on a universe's line, reads them, and
+         re-addresses and configures them (ANSI E1.20).
+
+         Every read asks the device. Every write is an RDM SET, which changes the
+         fixture itself — its address, its personality — and goes through the
+         server's output policy; over MCP it is refused unless the server was
+         started with --allow-writes. A device that refuses answers with a
+         google.rpc.Status carrying a google.rpc.ErrorInfo: domain
+         `dmx.regalium.dev`, reason the NACK reason in upper case
+         (`DATA_OUT_OF_RANGE`), and metadata `pid` and `meaning`.
+    - name: NodeService
+      description: |-
+        NodeService finds the equipment that carries universes: Art-Net nodes,
+         sACN sources and USB widgets.
+
+         It is the discovery half of the API. The collection is what discovery
+         has found, kept so that a node going quiet shows as unreachable rather
+         than vanishing.
+    - name: ServerService
+      description: |-
+        ServerService is the server itself: the output policy every write passes
+         through, and the server's status.
+    - name: UniverseService
+      description: |-
+        UniverseService patches outputs, listens to inputs, and reads and writes
+         their levels.
+
+         It is the write-first half of the API: almost every write here moves a
+         light. Each one goes through the server's output policy (see
+         dmx.server.v1.ServerService.GetPolicy), which can hold or black out
+         what is written, and over MCP is refused unless the server was started
+         with --allow-writes.

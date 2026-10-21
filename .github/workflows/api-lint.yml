@@ -1,0 +1,51 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# Google AIP lint over the schema tree, strictly.
+#
+# As in bacnet-rs. `just api-lint` runs the same check locally.
+name: API lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  aip:
+    name: Google AIP lint (strict)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Look for a schema to lint
+        id: probe
+        run: |
+          if [ -n "$(find protobuf -name '*.proto' 2>/dev/null)" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "no .proto found: the schema tree is missing"; exit 1
+          fi
+
+      # working-directory is protobuf so each file's path matches its proto
+      # package. Linting from the repository root instead trips
+      # core::0191::proto-package on every file.
+      #
+      # ignore-comment-disables means a finding cannot be suppressed from
+      # inside the schema. An escape hatch in the file being reviewed is not a
+      # review.
+      - name: Lint
+        if: steps.probe.outputs.found == 'true'
+        uses: the-protobuf-project/setup-google-api-linter@d031174de8de0a2166bc929f24e501b914c4a5e9
+        with:
+          version: 2.3.1
+          working-directory: protobuf
+          paths: "**/*.proto"
+          buf: true
+          buf-input: ".."
+          ignore-comment-disables: true
+          fail-on-error: true

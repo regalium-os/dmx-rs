@@ -1,0 +1,88 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.node.v1;
+
+import "dmx/node/v1/node.proto";
+import "dmx/node/v1/node_messages.proto";
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/protobuf/empty.proto";
+import "mcp/v1/annotations.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "NodeServiceProto";
+option java_package = "dev.regalium.dmx.node.v1";
+
+// NodeService finds the equipment that carries universes: Art-Net nodes,
+// sACN sources and USB widgets.
+//
+// It is the discovery half of the API. The collection is what discovery
+// has found, kept so that a node going quiet shows as unreachable rather
+// than vanishing.
+service NodeService {
+  // The default host serving this API.
+  option (google.api.default_host) = "dmx.regalium.dev";
+
+  // Answers are live and rig-specific: no client may share or reuse them.
+  option (mcp.v1.service) = {
+    cache: {scope: MCP_CACHE_SCOPE_PRIVATE}
+  };
+
+  // Reads one node, as it last described itself.
+  rpc GetNode(GetNodeRequest) returns (Node) {
+    option (mcp.v1.tool) = {
+      title: "Get node"
+      read_only: true
+      open_world: false
+    };
+    option (google.api.http) = {get: "/v1/{name=nodes/*}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Lists the nodes discovery has found, reachable or not.
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse) {
+    option (mcp.v1.tool) = {
+      title: "List nodes"
+      read_only: true
+      open_world: false
+    };
+    option (google.api.http) = {get: "/v1/nodes"};
+  }
+
+  // Forgets a node. Nothing is sent to it.
+  rpc DeleteNode(DeleteNodeRequest) returns (google.protobuf.Empty) {
+    option (mcp.v1.tool) = {
+      title: "Forget node"
+      read_only: false
+      destructive: true
+      idempotent: true
+      open_world: false
+    };
+    option (mcp.v1.elicitation) = {
+      message: "Forget this node? Nothing is sent to it, and it reappears when it next answers discovery."
+      required: true
+    };
+    option (google.api.http) = {delete: "/v1/{name=nodes/*}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Discovers nodes: ArtPoll on Art-Net, the universe discovery sources
+  // announce on sACN, and the safe probe on serial ports. Never sends DMX.
+  // Returns the nodes that answered, adding them to the collection.
+  rpc DiscoverNodes(DiscoverNodesRequest) returns (DiscoverNodesResponse) {
+    option (mcp.v1.tool) = {
+      title: "Discover nodes"
+      read_only: false
+      destructive: false
+      idempotent: true
+      open_world: false
+    };
+    option (google.api.http) = {
+      post: "/v1/nodes:discover"
+      body: "*"
+    };
+  }
+}

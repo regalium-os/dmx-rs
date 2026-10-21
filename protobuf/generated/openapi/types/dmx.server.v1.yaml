@@ -1,0 +1,119 @@
+components:
+  schemas:
+    dmx.server.v1.GetPolicyRequest:
+      description: Request message for ServerService.GetPolicy.
+      properties:
+        name:
+          description: 'The policy: always `policy`.'
+          type: string
+      type: object
+    dmx.server.v1.GetServerStatusRequest:
+      description: Request message for ServerService.GetServerStatus.
+      properties:
+        name:
+          description: 'The status: always `serverStatus`.'
+          type: string
+      type: object
+    dmx.server.v1.Policy:
+      description: 'The Policy is the one output safety policy every write passes
+        through: levels from any surface, and RDM SETs. No surface has its own.'
+      properties:
+        blackout:
+          description: Every output sends zeros, whatever its levels.
+          type: boolean
+        hold:
+          description: Every output keeps sending what it sent when hold began, and
+            writes wait, as a console's freeze does.
+          type: boolean
+        master:
+          description: 'The grand master: every level is scaled by master / 255 on
+            its way out. 255, full, unless set.'
+          format: int32
+          type: integer
+        mcpWritesAllowed:
+          description: 'Whether MCP clients may write: set by the server''s --allow-writes
+            flag, and never through this API.'
+          type: boolean
+        name:
+          description: 'The policy''s name: always `policy`.'
+          type: string
+        updateTime:
+          description: When it last changed.
+          format: date-time
+          type: string
+      type: object
+    dmx.server.v1.ServerStatus:
+      description: The server, as it is now. A singleton.
+      properties:
+        deviceCount:
+          description: RDM devices discovery has found, across universes.
+          format: int32
+          type: integer
+        inputCount:
+          description: Input universes it merges.
+          format: int32
+          type: integer
+        name:
+          description: 'The status''s name: always `serverStatus`.'
+          type: string
+        nodeCount:
+          description: Nodes discovery has found.
+          format: int32
+          type: integer
+        outputCount:
+          description: Output universes it sends.
+          format: int32
+          type: integer
+        startTime:
+          description: When it started.
+          format: date-time
+          type: string
+        version:
+          description: The server's version.
+          type: string
+      type: object
+    dmx.server.v1.UpdatePolicyRequest:
+      description: Request message for ServerService.UpdatePolicy.
+      properties:
+        policy:
+          description: The policy, as it should be. Its name is always `policy`.
+          properties:
+            blackout:
+              description: Every output sends zeros, whatever its levels.
+              type: boolean
+            hold:
+              description: Every output keeps sending what it sent when hold began,
+                and writes wait, as a console's freeze does.
+              type: boolean
+            master:
+              description: 'The grand master: every level is scaled by master / 255
+                on its way out. 255, full, unless set.'
+              format: int32
+              type: integer
+            mcpWritesAllowed:
+              description: 'Whether MCP clients may write: set by the server''s --allow-writes
+                flag, and never through this API.'
+              type: boolean
+            name:
+              description: 'The policy''s name: always `policy`.'
+              type: string
+            updateTime:
+              description: When it last changed.
+              format: date-time
+              type: string
+          type: object
+        updateMask:
+          description: 'Fields to change: blackout, hold, master.'
+          properties:
+            paths:
+              description: The set of field mask paths.
+              items:
+                type: string
+              type: array
+          type: object
+      type: object
+info:
+  title: OpenAPI Spec for Solo APIs.
+  version: v1
+openapi: 3.0.1
+paths: null

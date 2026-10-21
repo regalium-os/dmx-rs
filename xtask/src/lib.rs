@@ -16,6 +16,7 @@ pub mod graph;
 pub mod licence;
 pub mod metadata;
 pub mod native;
+pub mod openapi;
 pub mod purity;
 pub mod scan;
 pub mod size;
@@ -36,4 +37,5 @@ pub const GATES: &[Gate] = &[
     ("arch", arch::run),
     ("purity", purity::run),
     ("deps", deps::run),
+    ("openapi", openapi::run),
 ];

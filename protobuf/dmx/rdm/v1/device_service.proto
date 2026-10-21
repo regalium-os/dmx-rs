@@ -1,0 +1,159 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.rdm.v1;
+
+import "dmx/rdm/v1/device.proto";
+import "dmx/rdm/v1/device_messages.proto";
+import "dmx/rdm/v1/parameter.proto";
+import "dmx/rdm/v1/parameter_messages.proto";
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/protobuf/empty.proto";
+import "mcp/v1/annotations.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "DeviceServiceProto";
+option java_package = "dev.regalium.dmx.rdm.v1";
+
+// DeviceService finds the RDM devices on a universe's line, reads them, and
+// re-addresses and configures them (ANSI E1.20).
+//
+// Every read asks the device. Every write is an RDM SET, which changes the
+// fixture itself — its address, its personality — and goes through the
+// server's output policy; over MCP it is refused unless the server was
+// started with --allow-writes. A device that refuses answers with a
+// google.rpc.Status carrying a google.rpc.ErrorInfo: domain
+// `dmx.regalium.dev`, reason the NACK reason in upper case
+// (`DATA_OUT_OF_RANGE`), and metadata `pid` and `meaning`.
+service DeviceService {
+  // The default host serving this API.
+  option (google.api.default_host) = "dmx.regalium.dev";
+
+  // Answers are live and rig-specific: no client may share or reuse them.
+  option (mcp.v1.service) = {
+    cache: {scope: MCP_CACHE_SCOPE_PRIVATE}
+  };
+
+  // Reads one device: DEVICE_INFO and its labels.
+  rpc GetDevice(GetDeviceRequest) returns (Device) {
+    option (mcp.v1.tool) = {
+      title: "Get device"
+      read_only: true
+      open_world: false
+    };
+    option (google.api.http) = {get: "/v1/{name=universes/*/devices/*}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Lists the devices discovery found on a universe.
+  rpc ListDevices(ListDevicesRequest) returns (ListDevicesResponse) {
+    option (mcp.v1.tool) = {
+      title: "List devices"
+      read_only: true
+      open_world: false
+    };
+    option (google.api.http) = {get: "/v1/{parent=universes/*}/devices"};
+    option (google.api.method_signature) = "parent";
+  }
+
+  // Sets a device's label, start address, personality or identify, then
+  // reads them back, so the reply is what the device kept.
+  rpc UpdateDevice(UpdateDeviceRequest) returns (Device) {
+    option (mcp.v1.tool) = {
+      title: "Update device"
+      read_only: false
+      destructive: false
+      idempotent: true
+      open_world: false
+    };
+    option (mcp.v1.elicitation) = {
+      message: "Change this fixture? A new start address or personality re-patches it, and it responds to different levels at once."
+      required: true
+    };
+    option (google.api.http) = {
+      patch: "/v1/{device.name=universes/*/devices/*}"
+      body: "device"
+    };
+    option (google.api.method_signature) = "device,update_mask";
+  }
+
+  // Forgets a device. Nothing is sent to it.
+  rpc DeleteDevice(DeleteDeviceRequest) returns (google.protobuf.Empty) {
+    option (mcp.v1.tool) = {
+      title: "Forget device"
+      read_only: false
+      destructive: true
+      idempotent: true
+      open_world: false
+    };
+    option (mcp.v1.elicitation) = {
+      message: "Forget this device? Nothing is sent to it, and it reappears at the next discovery."
+      required: true
+    };
+    option (google.api.http) = {delete: "/v1/{name=universes/*/devices/*}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Finds every RDM device on a universe's line and adds them to the
+  // collection. Discovery mutes and un-mutes devices, which pauses nothing
+  // a fixture shows, but takes the line for a few seconds.
+  rpc DiscoverDevices(DiscoverDevicesRequest) returns (DiscoverDevicesResponse) {
+    option (mcp.v1.tool) = {
+      title: "Discover devices"
+      read_only: false
+      destructive: false
+      idempotent: true
+      open_world: false
+    };
+    option (google.api.http) = {
+      post: "/v1/{parent=universes/*}/devices:discover"
+      body: "*"
+    };
+  }
+
+  // Reads one parameter: an RDM GET, its answer as octets.
+  rpc GetParameter(GetParameterRequest) returns (Parameter) {
+    option (mcp.v1.tool) = {
+      title: "Get parameter"
+      read_only: true
+      open_world: false
+    };
+    option (google.api.http) = {get: "/v1/{name=universes/*/devices/*/parameters/*}"};
+    option (google.api.method_signature) = "name";
+  }
+
+  // Lists a device's parameters: the required ones, and those
+  // SUPPORTED_PARAMETERS names.
+  rpc ListParameters(ListParametersRequest) returns (ListParametersResponse) {
+    option (mcp.v1.tool) = {
+      title: "List parameters"
+      read_only: true
+      open_world: false
+    };
+    option (google.api.http) = {get: "/v1/{parent=universes/*/devices/*}/parameters"};
+    option (google.api.method_signature) = "parent";
+  }
+
+  // Sets one parameter: an RDM SET of the octets given.
+  rpc UpdateParameter(UpdateParameterRequest) returns (Parameter) {
+    option (mcp.v1.tool) = {
+      title: "Update parameter"
+      read_only: false
+      destructive: true
+      idempotent: true
+      open_world: false
+    };
+    option (mcp.v1.elicitation) = {
+      message: "Send this RDM SET? A manufacturer's parameter can reset, re-address or reconfigure the fixture."
+      required: true
+    };
+    option (google.api.http) = {
+      patch: "/v1/{parameter.name=universes/*/devices/*/parameters/*}"
+      body: "parameter"
+    };
+    option (google.api.method_signature) = "parameter,update_mask";
+  }
+}

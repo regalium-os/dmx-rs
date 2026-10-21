@@ -1,0 +1,51 @@
+// Copyright 2026 RegaliumOS™.
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package dmx.universe.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "LevelsProto";
+option java_package = "dev.regalium.dmx.universe.v1";
+
+// Levels are a universe's 512 slots as they stand: for an output, what is
+// being sent; for an input, what the merge makes of its sources.
+//
+// A singleton under its universe (AIP-156). Written through UpdateLevels or
+// WriteLevels, and only for an output: both go through the server's output
+// policy, which can hold or black out what is written.
+message Levels {
+  option (google.api.resource) = {
+    type: "dmx.regalium.dev/Levels"
+    pattern: "universes/{universe}/levels"
+    singular: "levels"
+    plural: "levels"
+  };
+
+  // The levels' name.
+  // Format: universes/{universe}/levels
+  string name = 1 [
+    (google.api.field_behavior) = IDENTIFIER,
+    (buf.validate.field).string.pattern = "^universes/[a-z][a-z0-9-]{0,62}/levels$"
+  ];
+
+  // The slots, one octet each, from slot 1: 0 to 512 of them. Their count
+  // is how many slots are sent.
+  bytes slots = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).bytes.max_len = 512
+  ];
+
+  // A counter that moves exactly when the levels a receiver would see
+  // change, so a reader polling can tell a change from a repeat.
+  int64 generation = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When they last changed.
+  google.protobuf.Timestamp update_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

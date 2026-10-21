@@ -1,0 +1,742 @@
+components:
+  schemas:
+    dmx.universe.v1.BlackoutUniverseRequest:
+      description: Request message for UniverseService.BlackoutUniverse.
+      properties:
+        name:
+          description: 'The output universe to take dark: every slot to 0, at its
+            current length. Format: universes/{universe}'
+          type: string
+      type: object
+    dmx.universe.v1.CreateUniverseRequest:
+      description: Request message for UniverseService.CreateUniverse.
+      properties:
+        universe:
+          description: 'The universe to create: its protocol, number, and output or
+            input.'
+          properties:
+            createTime:
+              description: When it was created.
+              format: date-time
+              type: string
+            displayName:
+              description: A label for people.
+              type: string
+            input:
+              description: Received, and merged.
+              properties:
+                maxSources:
+                  description: The most sources merged at once; more are refused.
+                    Defaults to 8.
+                  format: int32
+                  type: integer
+                mergeMode:
+                  description: HTP or LTP, among the sources at the highest priority
+                    present.
+                  enum:
+                  - MERGE_MODE_UNSPECIFIED
+                  - MERGE_MODE_HTP
+                  - MERGE_MODE_LTP
+                  type: string
+                sources:
+                  description: The sources merged now.
+                  items:
+                    description: One source an input is merging.
+                    properties:
+                      displayName:
+                        description: 'Its name, where the protocol carries one: an
+                          sACN source name.'
+                        type: string
+                      id:
+                        description: 'Who it is: an Art-Net sender''s address, `10.0.0.9:6454`;
+                          an sACN CID.'
+                        type: string
+                      lastSeenTime:
+                        description: When its last packet arrived.
+                        format: date-time
+                        type: string
+                      merged:
+                        description: Whether it is at the highest priority present,
+                          and so merged rather than held.
+                        type: boolean
+                      priority:
+                        description: 'Its priority: 0 to 200, 100 for Art-Net, which
+                          has none.'
+                        format: int32
+                        type: integer
+                    type: object
+                  type: array
+              type: object
+            name:
+              description: 'The universe''s name. Format: universes/{universe}'
+              type: string
+            node:
+              description: 'The node it is carried by: required for a serial line,
+                which is one widget''s; for Art-Net and sACN, where the network carries
+                it, empty. Format: nodes/{node}'
+              type: string
+            number:
+              description: 'The universe number, as the protocol numbers universes:
+                an Art-Net Port-Address, 0 to 32767; an sACN universe, 1 to 63999;
+                1 on a serial line.'
+              format: int32
+              type: integer
+            output:
+              description: Sent, refreshed by this policy.
+              properties:
+                interval:
+                  description: 'The shortest time between packets: about 23 ms, 44
+                    Hz, at full rate. Unset, the transport''s own.'
+                  type: string
+                keepAlive:
+                  description: 'How often unchanged levels are resent. Unset, the
+                    transport''s own: one second on the network, every interval on
+                    a raw line.'
+                  type: string
+                priority:
+                  description: 'For sACN, the priority sent with every packet: 0 to
+                    200, 100 unset.'
+                  format: int32
+                  type: integer
+              type: object
+            protocol:
+              description: The transport it travels on.
+              enum:
+              - PROTOCOL_UNSPECIFIED
+              - PROTOCOL_ARTNET
+              - PROTOCOL_SACN
+              - PROTOCOL_SERIAL
+              type: string
+            slotCount:
+              description: How many slots it carries, 0 to 512.
+              format: int32
+              type: integer
+            state:
+              description: What it is doing now.
+              enum:
+              - UNIVERSE_STATE_UNSPECIFIED
+              - UNIVERSE_STATE_LIVE
+              - UNIVERSE_STATE_IDLE
+              - UNIVERSE_STATE_FAILING
+              type: string
+          type: object
+        universeId:
+          description: 'The ID to give it, which becomes the last part of its name:
+            lower case, digits and hyphens, starting with a letter.'
+          type: string
+      type: object
+    dmx.universe.v1.DeleteUniverseRequest:
+      description: Request message for UniverseService.DeleteUniverse.
+      properties:
+        name:
+          description: 'The universe to stop. An sACN output tells its receivers it
+            has stopped; on other protocols receivers time it out. Format: universes/{universe}'
+          type: string
+      type: object
+    dmx.universe.v1.GetLevelsRequest:
+      description: Request message for UniverseService.GetLevels.
+      properties:
+        name:
+          description: 'The levels to read. Format: universes/{universe}/levels'
+          type: string
+      type: object
+    dmx.universe.v1.GetUniverseRequest:
+      description: Request message for UniverseService.GetUniverse.
+      properties:
+        name:
+          description: 'The universe to read. Format: universes/{universe}'
+          type: string
+      type: object
+    dmx.universe.v1.Input:
+      description: How an input universe merges its sources.
+      properties:
+        maxSources:
+          description: The most sources merged at once; more are refused. Defaults
+            to 8.
+          format: int32
+          type: integer
+        mergeMode:
+          description: HTP or LTP, among the sources at the highest priority present.
+          enum:
+          - MERGE_MODE_UNSPECIFIED
+          - MERGE_MODE_HTP
+          - MERGE_MODE_LTP
+          type: string
+        sources:
+          description: The sources merged now.
+          items:
+            description: One source an input is merging.
+            properties:
+              displayName:
+                description: 'Its name, where the protocol carries one: an sACN source
+                  name.'
+                type: string
+              id:
+                description: 'Who it is: an Art-Net sender''s address, `10.0.0.9:6454`;
+                  an sACN CID.'
+                type: string
+              lastSeenTime:
+                description: When its last packet arrived.
+                format: date-time
+                type: string
+              merged:
+                description: Whether it is at the highest priority present, and so
+                  merged rather than held.
+                type: boolean
+              priority:
+                description: 'Its priority: 0 to 200, 100 for Art-Net, which has none.'
+                format: int32
+                type: integer
+            type: object
+          type: array
+      type: object
+    dmx.universe.v1.Levels:
+      description: 'Levels are a universe''s 512 slots as they stand: for an output,
+        what is being sent; for an input, what the merge makes of its sources.'
+      properties:
+        generation:
+          description: A counter that moves exactly when the levels a receiver would
+            see change, so a reader polling can tell a change from a repeat.
+          format: int64
+          type: integer
+          x-kubernetes-int-or-string: true
+        name:
+          description: 'The levels'' name. Format: universes/{universe}/levels'
+          type: string
+        slots:
+          description: 'The slots, one octet each, from slot 1: 0 to 512 of them.
+            Their count is how many slots are sent.'
+          format: byte
+          type: string
+        updateTime:
+          description: When they last changed.
+          format: date-time
+          type: string
+      type: object
+    dmx.universe.v1.ListUniversesRequest:
+      description: Request message for UniverseService.ListUniverses.
+      properties:
+        filter:
+          description: 'Filter expression, AIP-160: `protocol = PROTOCOL_SACN`, or
+            `state = UNIVERSE_STATE_FAILING`.'
+          type: string
+        orderBy:
+          description: Sort order, AIP-132. Defaults to name ascending.
+          type: string
+        pageSize:
+          description: Maximum number of universes to return; zero selects a default.
+          format: int32
+          type: integer
+        pageToken:
+          description: A page token from a previous ListUniverses call.
+          type: string
+      type: object
+    dmx.universe.v1.ListUniversesResponse:
+      description: Response message for UniverseService.ListUniverses.
+      properties:
+        nextPageToken:
+          description: Pass to the next ListUniverses call; empty when there are no
+            more.
+          type: string
+        universes:
+          description: The universes.
+          items:
+            description: 'A Universe is 512 slots of DMX512 on one transport, and
+              what this server does with them: sends them, as an output, or merges
+              what arrives, as an input.'
+            properties:
+              createTime:
+                description: When it was created.
+                format: date-time
+                type: string
+              displayName:
+                description: A label for people.
+                type: string
+              input:
+                description: Received, and merged.
+                properties:
+                  maxSources:
+                    description: The most sources merged at once; more are refused.
+                      Defaults to 8.
+                    format: int32
+                    type: integer
+                  mergeMode:
+                    description: HTP or LTP, among the sources at the highest priority
+                      present.
+                    enum:
+                    - MERGE_MODE_UNSPECIFIED
+                    - MERGE_MODE_HTP
+                    - MERGE_MODE_LTP
+                    type: string
+                  sources:
+                    description: The sources merged now.
+                    items:
+                      description: One source an input is merging.
+                      properties:
+                        displayName:
+                          description: 'Its name, where the protocol carries one:
+                            an sACN source name.'
+                          type: string
+                        id:
+                          description: 'Who it is: an Art-Net sender''s address, `10.0.0.9:6454`;
+                            an sACN CID.'
+                          type: string
+                        lastSeenTime:
+                          description: When its last packet arrived.
+                          format: date-time
+                          type: string
+                        merged:
+                          description: Whether it is at the highest priority present,
+                            and so merged rather than held.
+                          type: boolean
+                        priority:
+                          description: 'Its priority: 0 to 200, 100 for Art-Net, which
+                            has none.'
+                          format: int32
+                          type: integer
+                      type: object
+                    type: array
+                type: object
+              name:
+                description: 'The universe''s name. Format: universes/{universe}'
+                type: string
+              node:
+                description: 'The node it is carried by: required for a serial line,
+                  which is one widget''s; for Art-Net and sACN, where the network
+                  carries it, empty. Format: nodes/{node}'
+                type: string
+              number:
+                description: 'The universe number, as the protocol numbers universes:
+                  an Art-Net Port-Address, 0 to 32767; an sACN universe, 1 to 63999;
+                  1 on a serial line.'
+                format: int32
+                type: integer
+              output:
+                description: Sent, refreshed by this policy.
+                properties:
+                  interval:
+                    description: 'The shortest time between packets: about 23 ms,
+                      44 Hz, at full rate. Unset, the transport''s own.'
+                    type: string
+                  keepAlive:
+                    description: 'How often unchanged levels are resent. Unset, the
+                      transport''s own: one second on the network, every interval
+                      on a raw line.'
+                    type: string
+                  priority:
+                    description: 'For sACN, the priority sent with every packet: 0
+                      to 200, 100 unset.'
+                    format: int32
+                    type: integer
+                type: object
+              protocol:
+                description: The transport it travels on.
+                enum:
+                - PROTOCOL_UNSPECIFIED
+                - PROTOCOL_ARTNET
+                - PROTOCOL_SACN
+                - PROTOCOL_SERIAL
+                type: string
+              slotCount:
+                description: How many slots it carries, 0 to 512.
+                format: int32
+                type: integer
+              state:
+                description: What it is doing now.
+                enum:
+                - UNIVERSE_STATE_UNSPECIFIED
+                - UNIVERSE_STATE_LIVE
+                - UNIVERSE_STATE_IDLE
+                - UNIVERSE_STATE_FAILING
+                type: string
+            type: object
+          type: array
+      type: object
+    dmx.universe.v1.MergeMode:
+      description: How a merged universe combines its sources, slot by slot, among
+        those at the highest priority present.
+      enum:
+      - MERGE_MODE_UNSPECIFIED
+      - MERGE_MODE_HTP
+      - MERGE_MODE_LTP
+      type: string
+    dmx.universe.v1.Output:
+      description: How an output universe is refreshed.
+      properties:
+        interval:
+          description: 'The shortest time between packets: about 23 ms, 44 Hz, at
+            full rate. Unset, the transport''s own.'
+          type: string
+        keepAlive:
+          description: 'How often unchanged levels are resent. Unset, the transport''s
+            own: one second on the network, every interval on a raw line.'
+          type: string
+        priority:
+          description: 'For sACN, the priority sent with every packet: 0 to 200, 100
+            unset.'
+          format: int32
+          type: integer
+      type: object
+    dmx.universe.v1.Source:
+      description: One source an input is merging.
+      properties:
+        displayName:
+          description: 'Its name, where the protocol carries one: an sACN source name.'
+          type: string
+        id:
+          description: 'Who it is: an Art-Net sender''s address, `10.0.0.9:6454`;
+            an sACN CID.'
+          type: string
+        lastSeenTime:
+          description: When its last packet arrived.
+          format: date-time
+          type: string
+        merged:
+          description: Whether it is at the highest priority present, and so merged
+            rather than held.
+          type: boolean
+        priority:
+          description: 'Its priority: 0 to 200, 100 for Art-Net, which has none.'
+          format: int32
+          type: integer
+      type: object
+    dmx.universe.v1.StreamLevelsRequest:
+      description: Request message for UniverseService.StreamLevels.
+      properties:
+        interval:
+          description: The shortest time between two responses. Levels move at up
+            to 44 Hz; a display rarely needs more than 10. Defaults to 100 ms; at
+            least 25.
+          type: string
+        name:
+          description: 'The levels to watch: an output''s or an input''s. Format:
+            universes/{universe}/levels'
+          type: string
+      type: object
+    dmx.universe.v1.StreamLevelsResponse:
+      description: 'Response message for UniverseService.StreamLevels: the levels
+        whenever they have changed, no more often than asked.'
+      properties:
+        levels:
+          description: The levels as they now stand.
+          properties:
+            generation:
+              description: A counter that moves exactly when the levels a receiver
+                would see change, so a reader polling can tell a change from a repeat.
+              format: int64
+              type: integer
+              x-kubernetes-int-or-string: true
+            name:
+              description: 'The levels'' name. Format: universes/{universe}/levels'
+              type: string
+            slots:
+              description: 'The slots, one octet each, from slot 1: 0 to 512 of them.
+                Their count is how many slots are sent.'
+              format: byte
+              type: string
+            updateTime:
+              description: When they last changed.
+              format: date-time
+              type: string
+          type: object
+      type: object
+    dmx.universe.v1.Universe:
+      description: 'A Universe is 512 slots of DMX512 on one transport, and what this
+        server does with them: sends them, as an output, or merges what arrives, as
+        an input.'
+      properties:
+        createTime:
+          description: When it was created.
+          format: date-time
+          type: string
+        displayName:
+          description: A label for people.
+          type: string
+        input:
+          description: Received, and merged.
+          properties:
+            maxSources:
+              description: The most sources merged at once; more are refused. Defaults
+                to 8.
+              format: int32
+              type: integer
+            mergeMode:
+              description: HTP or LTP, among the sources at the highest priority present.
+              enum:
+              - MERGE_MODE_UNSPECIFIED
+              - MERGE_MODE_HTP
+              - MERGE_MODE_LTP
+              type: string
+            sources:
+              description: The sources merged now.
+              items:
+                description: One source an input is merging.
+                properties:
+                  displayName:
+                    description: 'Its name, where the protocol carries one: an sACN
+                      source name.'
+                    type: string
+                  id:
+                    description: 'Who it is: an Art-Net sender''s address, `10.0.0.9:6454`;
+                      an sACN CID.'
+                    type: string
+                  lastSeenTime:
+                    description: When its last packet arrived.
+                    format: date-time
+                    type: string
+                  merged:
+                    description: Whether it is at the highest priority present, and
+                      so merged rather than held.
+                    type: boolean
+                  priority:
+                    description: 'Its priority: 0 to 200, 100 for Art-Net, which has
+                      none.'
+                    format: int32
+                    type: integer
+                type: object
+              type: array
+          type: object
+        name:
+          description: 'The universe''s name. Format: universes/{universe}'
+          type: string
+        node:
+          description: 'The node it is carried by: required for a serial line, which
+            is one widget''s; for Art-Net and sACN, where the network carries it,
+            empty. Format: nodes/{node}'
+          type: string
+        number:
+          description: 'The universe number, as the protocol numbers universes: an
+            Art-Net Port-Address, 0 to 32767; an sACN universe, 1 to 63999; 1 on a
+            serial line.'
+          format: int32
+          type: integer
+        output:
+          description: Sent, refreshed by this policy.
+          properties:
+            interval:
+              description: 'The shortest time between packets: about 23 ms, 44 Hz,
+                at full rate. Unset, the transport''s own.'
+              type: string
+            keepAlive:
+              description: 'How often unchanged levels are resent. Unset, the transport''s
+                own: one second on the network, every interval on a raw line.'
+              type: string
+            priority:
+              description: 'For sACN, the priority sent with every packet: 0 to 200,
+                100 unset.'
+              format: int32
+              type: integer
+          type: object
+        protocol:
+          description: The transport it travels on.
+          enum:
+          - PROTOCOL_UNSPECIFIED
+          - PROTOCOL_ARTNET
+          - PROTOCOL_SACN
+          - PROTOCOL_SERIAL
+          type: string
+        slotCount:
+          description: How many slots it carries, 0 to 512.
+          format: int32
+          type: integer
+        state:
+          description: What it is doing now.
+          enum:
+          - UNIVERSE_STATE_UNSPECIFIED
+          - UNIVERSE_STATE_LIVE
+          - UNIVERSE_STATE_IDLE
+          - UNIVERSE_STATE_FAILING
+          type: string
+      type: object
+    dmx.universe.v1.UniverseState:
+      description: What a universe is doing now.
+      enum:
+      - UNIVERSE_STATE_UNSPECIFIED
+      - UNIVERSE_STATE_LIVE
+      - UNIVERSE_STATE_IDLE
+      - UNIVERSE_STATE_FAILING
+      type: string
+    dmx.universe.v1.UpdateLevelsRequest:
+      description: 'Request message for UniverseService.UpdateLevels: every slot at
+        once.'
+      properties:
+        levels:
+          description: The levels to send. Their name identifies the output universe,
+            and the slots' count becomes how many are sent.
+          properties:
+            generation:
+              description: A counter that moves exactly when the levels a receiver
+                would see change, so a reader polling can tell a change from a repeat.
+              format: int64
+              type: integer
+              x-kubernetes-int-or-string: true
+            name:
+              description: 'The levels'' name. Format: universes/{universe}/levels'
+              type: string
+            slots:
+              description: 'The slots, one octet each, from slot 1: 0 to 512 of them.
+                Their count is how many slots are sent.'
+              format: byte
+              type: string
+            updateTime:
+              description: When they last changed.
+              format: date-time
+              type: string
+          type: object
+        updateMask:
+          description: Only `slots` may be written.
+          properties:
+            paths:
+              description: The set of field mask paths.
+              items:
+                type: string
+              type: array
+          type: object
+      type: object
+    dmx.universe.v1.UpdateUniverseRequest:
+      description: Request message for UniverseService.UpdateUniverse.
+      properties:
+        universe:
+          description: The universe to update. Its name field identifies which.
+          properties:
+            createTime:
+              description: When it was created.
+              format: date-time
+              type: string
+            displayName:
+              description: A label for people.
+              type: string
+            input:
+              description: Received, and merged.
+              properties:
+                maxSources:
+                  description: The most sources merged at once; more are refused.
+                    Defaults to 8.
+                  format: int32
+                  type: integer
+                mergeMode:
+                  description: HTP or LTP, among the sources at the highest priority
+                    present.
+                  enum:
+                  - MERGE_MODE_UNSPECIFIED
+                  - MERGE_MODE_HTP
+                  - MERGE_MODE_LTP
+                  type: string
+                sources:
+                  description: The sources merged now.
+                  items:
+                    description: One source an input is merging.
+                    properties:
+                      displayName:
+                        description: 'Its name, where the protocol carries one: an
+                          sACN source name.'
+                        type: string
+                      id:
+                        description: 'Who it is: an Art-Net sender''s address, `10.0.0.9:6454`;
+                          an sACN CID.'
+                        type: string
+                      lastSeenTime:
+                        description: When its last packet arrived.
+                        format: date-time
+                        type: string
+                      merged:
+                        description: Whether it is at the highest priority present,
+                          and so merged rather than held.
+                        type: boolean
+                      priority:
+                        description: 'Its priority: 0 to 200, 100 for Art-Net, which
+                          has none.'
+                        format: int32
+                        type: integer
+                    type: object
+                  type: array
+              type: object
+            name:
+              description: 'The universe''s name. Format: universes/{universe}'
+              type: string
+            node:
+              description: 'The node it is carried by: required for a serial line,
+                which is one widget''s; for Art-Net and sACN, where the network carries
+                it, empty. Format: nodes/{node}'
+              type: string
+            number:
+              description: 'The universe number, as the protocol numbers universes:
+                an Art-Net Port-Address, 0 to 32767; an sACN universe, 1 to 63999;
+                1 on a serial line.'
+              format: int32
+              type: integer
+            output:
+              description: Sent, refreshed by this policy.
+              properties:
+                interval:
+                  description: 'The shortest time between packets: about 23 ms, 44
+                    Hz, at full rate. Unset, the transport''s own.'
+                  type: string
+                keepAlive:
+                  description: 'How often unchanged levels are resent. Unset, the
+                    transport''s own: one second on the network, every interval on
+                    a raw line.'
+                  type: string
+                priority:
+                  description: 'For sACN, the priority sent with every packet: 0 to
+                    200, 100 unset.'
+                  format: int32
+                  type: integer
+              type: object
+            protocol:
+              description: The transport it travels on.
+              enum:
+              - PROTOCOL_UNSPECIFIED
+              - PROTOCOL_ARTNET
+              - PROTOCOL_SACN
+              - PROTOCOL_SERIAL
+              type: string
+            slotCount:
+              description: How many slots it carries, 0 to 512.
+              format: int32
+              type: integer
+            state:
+              description: What it is doing now.
+              enum:
+              - UNIVERSE_STATE_UNSPECIFIED
+              - UNIVERSE_STATE_LIVE
+              - UNIVERSE_STATE_IDLE
+              - UNIVERSE_STATE_FAILING
+              type: string
+          type: object
+        updateMask:
+          description: 'Fields to change: display_name, and the output''s refresh
+            and priority or the input''s merge mode and source limit. Protocol, number
+            and node are fixed: a different one is a different universe.'
+          properties:
+            paths:
+              description: The set of field mask paths.
+              items:
+                type: string
+              type: array
+          type: object
+      type: object
+    dmx.universe.v1.WriteLevelsRequest:
+      description: 'Request message for UniverseService.WriteLevels: a run of slots
+        from one address, the rest unchanged.'
+      properties:
+        name:
+          description: 'The levels to write into. Format: universes/{universe}/levels'
+          type: string
+        startAddress:
+          description: The first slot written, 1 to 512.
+          format: int32
+          type: integer
+        values:
+          description: 'The levels, 0 to 255, for consecutive slots from start_address.
+            All or nothing: a run past slot 512 is refused, and nothing is written.'
+          items:
+            format: int32
+            type: integer
+          type: array
+      type: object
+info:
+  title: OpenAPI Spec for Solo APIs.
+  version: v1
+openapi: 3.0.1
+paths: null
