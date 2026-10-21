@@ -1,0 +1,29 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# What a device answers: its request's transaction and PID, the class
+# plus one, and a response type where the request had its port.
+
+# DEVICE_INFO: model 0x0203, 16 slots, personality 2 of 4, at address 101, one sensor.
+cc 01 2b 7a 70 00 00 00 01 4c 55 12 34 56 78 00 00 00 00 00 21 00 60 13 01 00 02 03 01 01 00 01 02 03 00 10 02 04 00 65 00 00 01 04 b6 => get-response 4c55:12345678 -> 7a70:00000001 tn 0 type 0 count 0 sub 0 pid 0x0060; ack device-info model 0x0203 footprint 16 personality 2/4 address 101 sensors 1
+
+# SET acknowledged, no data, two queued messages waiting.
+cc 01 18 7a 70 00 00 00 01 4c 55 12 34 56 78 07 00 02 00 00 31 00 f0 00 04 af => set-response 4c55:12345678 -> 7a70:00000001 tn 7 type 0 count 2 sub 0 pid 0x00f0; ack, no data
+
+# NACK: unknown PID.
+cc 01 1a 7a 70 00 00 00 01 4c 55 12 34 56 78 08 02 00 00 00 21 80 01 02 00 00 04 35 => get-response 4c55:12345678 -> 7a70:00000001 tn 8 type 2 count 0 sub 0 pid 0x8001; nack unknown-pid
+
+# NACK: data out of range.
+cc 01 1a 7a 70 00 00 00 01 4c 55 12 34 56 78 09 02 00 00 00 31 00 f0 02 00 06 04 bb => set-response 4c55:12345678 -> 7a70:00000001 tn 9 type 2 count 0 sub 0 pid 0x00f0; nack data-out-of-range
+
+# ACK_TIMER: ask the queue in 1.5 s.
+cc 01 1a 7a 70 00 00 00 01 4c 55 12 34 56 78 0a 01 00 00 00 21 02 01 02 00 0f 03 c7 => get-response 4c55:12345678 -> 7a70:00000001 tn 10 type 1 count 0 sub 0 pid 0x0201; ack-timer 1500 ms
+
+# ACK_OVERFLOW: the first part of a long answer.
+cc 01 1c 7a 70 00 00 00 01 4c 55 12 34 56 78 0b 03 00 00 00 21 00 50 04 00 80 00 81 05 0d => get-response 4c55:12345678 -> 7a70:00000001 tn 11 type 3 count 0 sub 0 pid 0x0050; ack-overflow 00800081
+
+# DISC_MUTE answered, control field 0.
+cc 01 1a 7a 70 00 00 00 01 4c 55 12 34 56 78 03 00 00 00 00 11 00 02 02 00 00 03 9f => discovery-response 4c55:12345678 -> 7a70:00000001 tn 3 type 0 count 0 sub 0 pid 0x0002; ack 0000
+
+# 231 octets of data, the most a message holds.
+cc 01 ff 7a 70 00 00 00 01 4c 55 12 34 56 78 0c 00 00 00 00 21 81 00 e7 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d 2e 2f 30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f 40 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f 50 51 52 53 54 55 56 57 58 59 5a 5b 5c 5d 5e 5f 60 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f 70 71 72 73 74 75 76 77 78 79 7a 7b 7c 7d 7e 7f 80 81 82 83 84 85 86 87 88 89 8a 8b 8c 8d 8e 8f 90 91 92 93 94 95 96 97 98 99 9a 9b 9c 9d 9e 9f a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 aa ab ac ad ae af b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 ba bb bc bd be bf c0 c1 c2 c3 c4 c5 c6 c7 c8 c9 ca cb cc cd ce cf d0 d1 d2 d3 d4 d5 d6 d7 d8 d9 da db dc dd de df e0 e1 e2 e3 e4 e5 e6 6d c6 => get-response 4c55:12345678 -> 7a70:00000001 tn 12 type 0 count 0 sub 0 pid 0x8100; ack 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6

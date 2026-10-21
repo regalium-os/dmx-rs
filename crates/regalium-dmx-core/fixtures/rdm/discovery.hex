@@ -1,0 +1,29 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# Answers to DISC_UNIQUE_BRANCH: up to seven 0xfe, 0xaa, then each UID
+# octet as (x | 0xaa, x | 0x55), and the sum of those twelve, the same way.
+
+# One device, seven octets of preamble.
+fe fe fe fe fe fe fe aa ee 5d ff 55 ba 57 be 75 fe 57 fa 7d af 57 af ff => uid 4c55:12345678
+
+# No preamble at all: allowed.
+aa ee 5d ff 55 ba 57 be 75 fe 57 fa 7d af 57 af ff => uid 4c55:12345678
+
+# The highest UID a device may have.
+fe fe fe aa ff ff ff ff ff ff ff ff ff ff fe ff ab 5f fb f7 => uid ffff:fffffffe
+
+# Line noise after the response: ignored.
+fe fe fe fe fe fe fe aa ee 5d ff 55 ba 57 be 75 fe 57 fa 7d af 57 af ff 00 13 => uid 4c55:12345678
+
+# Two devices at once, their octets ORed: the pairs no longer agree with the checksum.
+fe fe fe fe fe fe fe aa ee 5d ff 55 ba 57 be 75 fe 57 fb 7d af 57 bf ff => error collision at 20
+
+# A pair with a bit cleared that 0xaa sets: a collision.
+fe fe fe fe fe fe fe aa 6e 5d ff 55 ba 57 be 75 fe 57 fa 7d af 57 af ff => error collision at 8
+
+# No separator.
+fe fe fe fe fe fe fe 00 => error collision at 7
+
+# Cut short.
+fe fe fe fe fe fe fe aa ee 5d ff 55 ba 57 be 75 fe 57 fa 7d => error truncated need 24 at 20

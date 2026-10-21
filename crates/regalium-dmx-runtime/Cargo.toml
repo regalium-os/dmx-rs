@@ -22,6 +22,11 @@ regalium-dmx-telemetry.workspace = true
 [dev-dependencies]
 regalium-dmx-artnet.workspace = true
 regalium-dmx-sacn.workspace = true
+regalium-dmx-serial.workspace = true
+
+# A fake widget on a pseudo-terminal, for RDM end to end.
+[target.'cfg(unix)'.dev-dependencies]
+rustix = { workspace = true, features = ["pty"] }
 
 [lints]
 workspace = true

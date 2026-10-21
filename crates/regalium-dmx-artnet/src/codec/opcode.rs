@@ -36,6 +36,14 @@ impl OpCode {
     pub const SYNC: Self = Self(0x5200);
     /// `OpAddress`: reconfigure a node.
     pub const ADDRESS: Self = Self(0x6000);
+    /// `OpTodRequest`: send your table of RDM devices.
+    pub const TOD_REQUEST: Self = Self(0x8000);
+    /// `OpTodData`: a table of RDM devices.
+    pub const TOD_DATA: Self = Self(0x8100);
+    /// `OpTodControl`: rebuild your table.
+    pub const TOD_CONTROL: Self = Self(0x8200);
+    /// `OpRdm`: one RDM message.
+    pub const RDM: Self = Self(0x8300);
 
     /// The packet's name in the Art-Net 4 specification, or `None`.
     #[must_use]
@@ -46,6 +54,10 @@ impl OpCode {
             Self::DMX => "ArtDmx",
             Self::SYNC => "ArtSync",
             Self::ADDRESS => "ArtAddress",
+            Self::TOD_REQUEST => "ArtTodRequest",
+            Self::TOD_DATA => "ArtTodData",
+            Self::TOD_CONTROL => "ArtTodControl",
+            Self::RDM => "ArtRdm",
             _ => return None,
         })
     }

@@ -1,0 +1,24 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# What a controller sends: start code 0xcc, sub-start 0x01, length,
+# destination, source, transaction, port, count, sub-device, class, PID,
+# data length, data, and the 16-bit sum of all of it.
+
+# GET DEVICE_INFO from one device, on port 1.
+cc 01 18 4c 55 12 34 56 78 7a 70 00 00 00 01 00 01 00 00 00 20 00 60 00 04 06 => get 7a70:00000001 -> 4c55:12345678 tn 0 port 1 count 0 sub 0 pid 0x0060; no data
+
+# SET DMX_START_ADDRESS to 101.
+cc 01 1a 4c 55 12 34 56 78 7a 70 00 00 00 01 07 01 00 00 00 30 00 f0 02 00 65 05 16 => set 7a70:00000001 -> 4c55:12345678 tn 7 port 1 count 0 sub 0 pid 0x00f0; data 0065
+
+# Discovery: un-mute every device. Broadcast, so nothing answers.
+cc 01 18 ff ff ff ff ff ff 7a 70 00 00 00 01 01 01 00 00 00 10 00 03 00 07 df => discovery 7a70:00000001 -> ffff:ffffffff tn 1 port 1 count 0 sub 0 pid 0x0003; no data
+
+# Discovery: unique branch over the whole UID range.
+cc 01 24 ff ff ff ff ff ff 7a 70 00 00 00 01 02 01 00 00 00 10 00 01 0c 00 00 00 00 00 00 ff ff ff ff ff fe 0d ef => discovery 7a70:00000001 -> ffff:ffffffff tn 2 port 1 count 0 sub 0 pid 0x0001; data 000000000000fffffffffffe
+
+# Discovery: mute one device.
+cc 01 18 4c 55 12 34 56 78 7a 70 00 00 00 01 03 01 00 00 00 10 00 02 00 03 9b => discovery 7a70:00000001 -> 4c55:12345678 tn 3 port 1 count 0 sub 0 pid 0x0002; no data
+
+# SET IDENTIFY_DEVICE on every sub-device of one device.
+cc 01 19 4c 55 12 34 56 78 7a 70 00 00 00 01 ff 01 00 ff ff 30 10 00 01 01 06 c6 => set 7a70:00000001 -> 4c55:12345678 tn 255 port 1 count 0 sub 65535 pid 0x1000; data 01

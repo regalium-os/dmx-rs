@@ -1428,7 +1428,9 @@ dependencies = [
  "regalium-dmx-artnet",
  "regalium-dmx-core",
  "regalium-dmx-sacn",
+ "regalium-dmx-serial",
  "regalium-dmx-telemetry",
+ "rustix",
 ]
 
 [[package]]

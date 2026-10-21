@@ -1,0 +1,42 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# RDM over Art-Net: ArtRdm (0x8300), ArtTodRequest (0x8000), ArtTodData
+# (0x8100) and ArtTodControl (0x8200). Ports are named as in ArtDmx: Net, then
+# the low octet of the Port-Address.
+
+# ArtRdm: GET DEVICE_INFO for port 0:0:1, the RDM message without its start code.
+41 72 74 2d 4e 65 74 00 00 83 00 0e 01 00 00 00 00 00 00 00 00 00 00 01 01 18 4c 55 12 34 56 78 7a 70 00 00 00 01 05 01 00 00 00 20 00 60 00 04 0b => rdm v14 rdmver 1 port 0:0:1 command 0; get tn 5 pid 0x0060
+
+# ArtRdm on port 2:3:4, spare octets set: kept.
+41 72 74 2d 4e 65 74 00 00 83 00 0e 01 00 01 00 00 00 00 00 09 02 00 34 01 18 4c 55 12 34 56 78 7a 70 00 00 00 01 05 01 00 00 00 20 00 60 00 04 0b => rdm v14 rdmver 1 port 2:3:4 command 0; get tn 5 pid 0x0060
+
+# ArtRdm carrying something that is not a whole RDM message: decoded as Art-Net, the RDM refused.
+41 72 74 2d 4e 65 74 00 00 83 00 0e 01 00 00 00 00 00 00 00 00 00 00 01 01 02 => rdm v14 rdmver 1 port 0:0:1 command 0; not rdm
+
+# ArtTodRequest for 0:0:1 and 0:0:5.
+41 72 74 2d 4e 65 74 00 00 80 00 0e 00 00 00 00 00 00 00 00 00 00 00 02 01 05 => tod-request v14 net 0 command 0 addresses 0105
+
+# ArtTodRequest padded to the full 32 addresses, as many senders do: the padding kept.
+41 72 74 2d 4e 65 74 00 00 80 00 0e 00 00 00 00 00 00 00 00 00 00 00 01 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 => tod-request v14 net 0 command 0 addresses 01; 31 trailing
+
+# ArtTodControl: flush 1:2:3's table and discover again.
+41 72 74 2d 4e 65 74 00 00 82 00 0e 00 00 00 00 00 00 00 00 00 01 01 23 => tod-control v14 net 1 command 1 addresses 23
+
+# ArtTodData: two devices on 0:0:1, the whole table in one block.
+41 72 74 2d 4e 65 74 00 00 81 00 0e 01 01 00 00 00 00 00 00 01 00 00 01 00 02 00 02 4c 55 12 34 56 78 4c 55 00 00 00 01 => tod-data v14 port 1 bind 1 response 0 port-address 0:0:1 total 2 block 0 uids 4c55:12345678 4c55:00000001
+
+# ArtTodData: block 1 of a 300-device table.
+41 72 74 2d 4e 65 74 00 00 81 00 0e 01 01 00 00 00 00 00 00 01 00 00 01 01 2c 01 01 00 01 00 00 01 2c => tod-data v14 port 1 bind 1 response 0 port-address 0:0:1 total 300 block 1 uids 0001:0000012c
+
+# ArtTodData: TodNak, no table.
+41 72 74 2d 4e 65 74 00 00 81 00 0e 01 01 00 00 00 00 00 00 01 00 ff 01 00 00 00 00 => tod-data v14 port 1 bind 1 response 255 port-address 0:0:1 total 0 block 0 uids none
+
+# ArtTodData claiming three UIDs, carrying one.
+41 72 74 2d 4e 65 74 00 00 81 00 0e 01 01 00 00 00 00 00 00 01 00 00 01 00 03 00 03 4c 55 12 34 56 78 => error truncated need 46 at 34
+
+# ArtTodRequest claiming two addresses, carrying one.
+41 72 74 2d 4e 65 74 00 00 80 00 0e 00 00 00 00 00 00 00 00 00 00 00 02 01 => error truncated need 26 at 25
+
+# ArtRdm cut before its address.
+41 72 74 2d 4e 65 74 00 00 83 00 0e 01 00 00 00 00 00 00 00 00 => error truncated need 24 at 21

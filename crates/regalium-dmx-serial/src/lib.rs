@@ -9,7 +9,7 @@
 //! Owns: the ENTTEC DMX USB Pro widget API ([`enttec`]); port discovery
 //! ([`discovery`], [`scan`]); the line's timing ([`line`]); a raw serial
 //! port ([`port`]); and two transports satisfying the core's trait — an
-//! ENTTEC-API widget ([`Enttec`]) and a raw UART on an RS-485 transceiver
+//! ENTTEC-API widget ([`Enttec`]), which also carries RDM, and a raw UART on an RS-485 transceiver
 //! ([`Uart`]).
 //!
 //! Must not: link C. Ports are enumerated through sysfs and device names,
@@ -30,7 +30,7 @@
 //! # State
 //!
 //! Phase 6: the widget API and its corpus; discovery and the safe probe;
-//! the widget and UART transports. RDM on the line arrives in Phase 6b.
+//! the widget and UART transports. Phase 6b: RDM through the widget.
 
 pub mod discovery;
 pub mod enttec;
@@ -47,8 +47,12 @@ pub mod scan;
 mod uart;
 #[cfg(unix)]
 mod widget;
+#[cfg(unix)]
+mod widget_rdm;
 
 #[cfg(unix)]
 pub use uart::Uart;
 #[cfg(unix)]
 pub use widget::{Enttec, KEEP_ALIVE, UNIVERSE, WRITE};
+#[cfg(unix)]
+pub use widget_rdm::RDM_WINDOW;

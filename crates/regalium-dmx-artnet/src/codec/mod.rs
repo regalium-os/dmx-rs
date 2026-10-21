@@ -18,9 +18,12 @@ mod opcode;
 mod poll;
 mod poll_reply;
 mod port_address;
+mod rdm;
 mod reply;
 mod sync;
 mod text;
+mod tod;
+mod tod_request;
 
 pub use address::{ArtAddress, LONG_NAME, SHORT_NAME};
 pub use dmx::ArtDmx;
@@ -29,9 +32,12 @@ pub use opcode::{ID, OpCode, PORT, VERSION};
 pub use poll::{ArtPoll, DIAGNOSTICS, DIAGNOSTICS_UNICAST, REPLY_ON_CHANGE, TARGETED};
 pub use poll_reply::ArtPollReply;
 pub use port_address::PortAddress;
+pub use rdm::{ArtRdm, RDM_VERSION};
 pub use reply::{LEN as REPLY_LEN, REPORT, Reply, ST_CONTROLLER, ST_NODE, STATUS2_PORT_ADDRESS_15};
 pub use sync::ArtSync;
 pub use text::{name, text};
+pub use tod::{ArtTodData, BLOCK, TOD_FULL, TOD_NAK};
+pub use tod_request::{ATC_FLUSH, ArtTod};
 
 use opcode::HEADER;
 
@@ -51,6 +57,14 @@ pub enum Packet<'a> {
     Sync(ArtSync<'a>),
     /// `ArtAddress`: reconfiguration.
     Address(ArtAddress<'a>),
+    /// `ArtTodRequest`: send your table of RDM devices.
+    TodRequest(ArtTod<'a>),
+    /// `ArtTodData`: a table of RDM devices.
+    TodData(ArtTodData<'a>),
+    /// `ArtTodControl`: rebuild your table.
+    TodControl(ArtTod<'a>),
+    /// `ArtRdm`: one RDM message.
+    Rdm(ArtRdm<'a>),
     /// An opcode this crate does not decode yet, and everything after it.
     Other {
         /// The opcode.
@@ -74,6 +88,10 @@ impl<'a> Packet<'a> {
             OpCode::POLL_REPLY => Self::PollReply(ArtPollReply::decode(datagram)?),
             OpCode::SYNC => Self::Sync(ArtSync::decode(datagram)?),
             OpCode::ADDRESS => Self::Address(ArtAddress::decode(datagram)?),
+            OpCode::TOD_REQUEST => Self::TodRequest(ArtTod::decode_request(datagram)?),
+            OpCode::TOD_DATA => Self::TodData(ArtTodData::decode(datagram)?),
+            OpCode::TOD_CONTROL => Self::TodControl(ArtTod::decode_control(datagram)?),
+            OpCode::RDM => Self::Rdm(ArtRdm::decode(datagram)?),
             opcode => Self::Other {
                 opcode,
                 body: datagram.get(HEADER..).unwrap_or_default(),
@@ -89,6 +107,10 @@ impl<'a> Packet<'a> {
             Self::PollReply(p) => p.encode(out),
             Self::Sync(p) => p.encode(out),
             Self::Address(p) => p.encode(out),
+            Self::TodRequest(p) => p.encode(out, false),
+            Self::TodData(p) => p.encode(out),
+            Self::TodControl(p) => p.encode(out, true),
+            Self::Rdm(p) => p.encode(out),
             Self::Other { opcode, body } => {
                 opcode::write(out, *opcode);
                 out.extend_from_slice(body);
@@ -105,6 +127,10 @@ impl<'a> Packet<'a> {
             Self::PollReply(_) => OpCode::POLL_REPLY,
             Self::Sync(_) => OpCode::SYNC,
             Self::Address(_) => OpCode::ADDRESS,
+            Self::TodRequest(_) => OpCode::TOD_REQUEST,
+            Self::TodData(_) => OpCode::TOD_DATA,
+            Self::TodControl(_) => OpCode::TOD_CONTROL,
+            Self::Rdm(_) => OpCode::RDM,
             Self::Other { opcode, .. } => *opcode,
         }
     }

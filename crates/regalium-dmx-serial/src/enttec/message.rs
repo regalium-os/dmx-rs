@@ -34,7 +34,8 @@ impl Label {
     pub const RECEIVED_DMX: Self = Self(5);
     /// Output Only Send DMX Packet: the start code and 24 to 512 slots.
     pub const SEND_DMX: Self = Self(6);
-    /// Send RDM Packet (Phase 6b).
+    /// Send RDM Packet: the request, start code 0xCC to checksum; the
+    /// answer comes back as Received DMX.
     pub const SEND_RDM: Self = Self(7);
     /// Receive DMX on Change: 0 sends every packet received, 1 only changes.
     pub const RECEIVE_ON_CHANGE: Self = Self(8);
@@ -43,8 +44,13 @@ impl Label {
     /// Get Widget Serial Number: four octets of BCD, least significant
     /// first.
     pub const GET_SERIAL: Self = Self(10);
-    /// Send RDM Discovery Request (Phase 6b).
+    /// Send RDM Discovery Request: the widget sends the request and
+    /// returns what it heard in the discovery window as Received DMX.
     pub const SEND_RDM_DISCOVERY: Self = Self(11);
+    /// Some firmware reports a request that drew no answer with this
+    /// label; the widget transport takes it as silence. Not in every
+    /// revision of the API.
+    pub const RDM_TIMEOUT: Self = Self(12);
 
     /// The label's name in the API, or `None`.
     #[must_use]
@@ -59,6 +65,7 @@ impl Label {
             Self::CHANGE_OF_STATE => "change-of-state",
             Self::GET_SERIAL => "get-serial",
             Self::SEND_RDM_DISCOVERY => "send-rdm-discovery",
+            Self::RDM_TIMEOUT => "rdm-timeout",
             _ => return None,
         })
     }

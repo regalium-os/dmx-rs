@@ -29,9 +29,11 @@ use crate::frame::Frame;
 use crate::refresh::Refresh;
 use core::time::Duration;
 
+mod rdm;
 mod received;
 mod shared;
 
+pub use rdm::{Answer, Expect, RdmLine};
 pub use received::Received;
 
 /// How long a merge source may be silent before it is dropped, unless a

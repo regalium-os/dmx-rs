@@ -160,3 +160,34 @@ The adapter pins the same SDK commit as bacnet-rs, so both export alike.
   raw UART; the Pro Mk2's second port; and the bench — a real widget and a
   scope on the UART's break.
 
+
+## Phase 6b, in detail
+
+- **The core's RDM** (`core::rdm`), pure: UIDs; the message codec and its
+  checksum; command classes, response types, PIDs and NACK reasons, each a
+  newtype over every value; `DEVICE_INFO`; the discovery answer's own
+  encoding, where a collision is a decode error; matching an answer to its
+  question field by field; and discovery's binary search as a state
+  machine — mute retries, a device that will not mute, a noisy line
+  bounded and flagged. Corpus `fixtures/rdm/`.
+- **A responder** (`core::rdm::Responder`): one device answering as E1.20
+  says, with `ACK_OVERFLOW` and `ACK_TIMER` on request. The simulator's
+  fixtures, and every RDM test's.
+- **The line trait** (`core::transport::RdmLine`): send a request, collect
+  the window's answer; or hand over the far end's own table.
+- **The controller** (`runtime::rdm::Controller`): discovery, GET, SET;
+  retries, overflow joined, `ACK_TIMER` followed through the queue on the
+  injected clock; `dmx.rdm.request` and `dmx.rdm.discovery` spans and the
+  RDM series. The one path every RDM write takes, where the output policy
+  will gate it.
+- **The widget** carries RDM on labels 7 and 11, draining stale answers
+  before each request. **Art-Net** carries it in `ArtRdm`, with the node's
+  table from `ArtTodRequest`/`ArtTodData`; replies read by a concurrent
+  input reach the controller through an inbox. Corpus `fixtures/rdm.hex`.
+- **Tested end to end without hardware**: six fixtures discovered and
+  re-addressed through the widget on a pty while levels go out; four
+  through a fake Art-Net node over UDP while an input shares the socket.
+- **Not yet**: sub-devices beyond the root, proxies, `ACK_TIMER` on SET,
+  E1.33. Unverified against equipment: whether widget firmware reports a
+  timeout (label 12) for broadcasts, and the `QUEUED_MESSAGE` status type
+  (0x04) a controller should ask with.

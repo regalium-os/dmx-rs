@@ -38,18 +38,20 @@ pub const WRITE: Duration = Duration::from_millis(100);
 pub const KEEP_ALIVE: Duration = Duration::from_secs(1);
 
 /// Frames received but not yet handed out, before the oldest are dropped.
-const PENDING: usize = 8;
+pub(crate) const PENDING: usize = 8;
 
 /// An open, identified widget.
 #[derive(Debug)]
 pub struct Enttec {
-    port: Port,
+    pub(crate) port: Port,
     identity: Identity,
     out: Mutex<Vec<u8>>,
-    framer: Mutex<(Framer, VecDeque<Vec<u8>>)>,
+    /// The stream's framer and the DMX received but not yet handed out.
+    /// Whoever reads the port holds it: a receive, or an RDM exchange.
+    pub(crate) framer: Mutex<(Framer, VecDeque<Vec<u8>>)>,
 }
 
-fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
+pub(crate) fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
@@ -85,7 +87,7 @@ impl Enttec {
         self.identity
     }
 
-    fn write(&self, label: Label, data: &[u8]) -> Result<(), Error> {
+    pub(crate) fn write(&self, label: Label, data: &[u8]) -> Result<(), Error> {
         let mut out = lock(&self.out);
         out.clear();
         Message { label, data }.encode(&mut out);

@@ -12,6 +12,9 @@
 use regalium_dmx_artnet::codec::{Error, ErrorKind, Packet, text};
 use std::fmt::Write as _;
 
+#[path = "fixtures/rdm.rs"]
+mod rdm;
+
 const CORPORA: &[(&str, &str)] = &[
     ("dmx.hex", include_str!("../fixtures/dmx.hex")),
     ("poll.hex", include_str!("../fixtures/poll.hex")),
@@ -19,6 +22,7 @@ const CORPORA: &[(&str, &str)] = &[
     ("sync.hex", include_str!("../fixtures/sync.hex")),
     ("address.hex", include_str!("../fixtures/address.hex")),
     ("other.hex", include_str!("../fixtures/other.hex")),
+    ("rdm.hex", include_str!("../fixtures/rdm.hex")),
     ("malformed.hex", include_str!("../fixtures/malformed.hex")),
 ];
 
@@ -28,7 +32,7 @@ fn hex(s: &str) -> Vec<u8> {
         .collect()
 }
 
-fn octets(b: &[u8]) -> String {
+pub(crate) fn octets(b: &[u8]) -> String {
     b.iter().fold(String::new(), |mut out, x| {
         let _ = write!(out, "{x:02x}");
         out
@@ -107,6 +111,9 @@ fn meaning(packet: &Packet<'_>) -> String {
             a.sw_out,
             a.command,
         ),
+        Packet::Rdm(_) | Packet::TodRequest(_) | Packet::TodControl(_) | Packet::TodData(_) => {
+            rdm::meaning(packet)
+        }
         Packet::Other { opcode, body: [] } => format!("{opcode}; no body"),
         Packet::Other { opcode, body } => format!("{opcode}; body {}", octets(body)),
         other => format!("{other:?}"),

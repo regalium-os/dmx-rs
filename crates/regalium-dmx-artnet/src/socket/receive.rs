@@ -83,6 +83,23 @@ impl ArtNet {
                 self.state().nodes.record(from, &reply);
                 Ok(None)
             }
+            Ok(Packet::Rdm(_)) => {
+                let mut state = self.state();
+                if state.inbox.len() == super::rdm::INBOX {
+                    state.inbox.pop_front();
+                }
+                state.inbox.push_back(datagram.to_vec());
+                Ok(None)
+            }
+            Ok(Packet::TodData(tod)) if tod.response == crate::codec::TOD_FULL => {
+                let mut state = self.state();
+                let table = state.tod.entry(tod.port_address.get()).or_default();
+                if tod.block == 0 {
+                    table.clear();
+                }
+                table.extend(tod.uids().take(super::rdm::MAX_TOD));
+                Ok(None)
+            }
             // Targeted polls for ports this controller lacks, syncs, address
             // changes, unknown opcodes and datagrams that are not Art-Net.
             _ => Ok(None),

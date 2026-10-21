@@ -16,13 +16,13 @@
 //!
 //! # State
 //!
-//! Phase 6: the core's frames, universes, merging with priority, refresh
-//! policy and transport trait; the runtime's outputs and inputs; Art-Net 4,
-//! sACN, and the serial line.
+//! Phase 6b: the core's frames, universes, merging with priority, refresh
+//! policy, RDM and transport traits; the runtime's outputs, inputs and RDM
+//! controller; Art-Net 4, sACN, and the serial line.
 
 pub use regalium_dmx_artnet as artnet;
 pub use regalium_dmx_core::{
-    address, error, frame, merge, refresh, start_code, transport, universe,
+    address, error, frame, merge, rdm, refresh, start_code, transport, universe,
 };
 pub use regalium_dmx_runtime as runtime;
 pub use regalium_dmx_sacn as sacn;

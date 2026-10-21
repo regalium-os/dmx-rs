@@ -1,0 +1,28 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# Octets that are not one whole RDM message. `error <kind> at <offset>`.
+
+# Nothing.
+ => error truncated need 26 at 0
+
+# A DMX null start code packet.
+00 01 02 03 => error not-rdm at 0
+
+# Start code 0xcc with the wrong sub-start code.
+cc 02 18 4c 55 12 34 56 78 7a 70 00 00 00 01 00 01 00 00 00 20 00 60 00 04 06 => error not-rdm at 0
+
+# The header cut short.
+cc 01 18 4c 55 12 34 56 78 7a 70 00 00 00 01 00 01 00 00 00 => error truncated need 26 at 20
+
+# A length that disagrees with the data length.
+cc 01 19 4c 55 12 34 56 78 7a 70 00 00 00 01 00 01 00 00 00 20 00 60 00 04 07 => error length 25 not 24 at 2
+
+# A checksum one off.
+cc 01 18 4c 55 12 34 56 78 7a 70 00 00 00 01 00 01 00 00 00 20 00 60 00 04 07 => error checksum 0x0407 not 0x0406 at 24
+
+# The checksum's second octet missing.
+cc 01 18 4c 55 12 34 56 78 7a 70 00 00 00 01 00 01 00 00 00 20 00 60 00 04 => error truncated need 26 at 25
+
+# An octet after the checksum.
+cc 01 18 4c 55 12 34 56 78 7a 70 00 00 00 01 00 01 00 00 00 20 00 60 00 04 06 00 => error trailing at 26

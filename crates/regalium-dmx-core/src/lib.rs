@@ -22,9 +22,8 @@
 //! | [`merge`] | priority, then HTP or LTP, merging sources into one universe |
 //! | [`error`] | decode errors that borrow the octets, and refused changes |
 //! | [`refresh`] | when to send a universe: the refresh policy as a state machine |
-//! | [`transport`] | the trait every transport satisfies |
-//! | `rdm` | E1.20 messages: header, checksum, parameter ids, NACK reasons (6b) |
-//! | `discovery` | E1.20 binary-search discovery as a state machine (6b) |
+//! | [`transport`] | the traits every transport, and every RDM line, satisfies |
+//! | [`rdm`] | E1.20: messages, UIDs, codes, discovery's search, a responder |
 //!
 //! Must not: perform I/O, hold an operating-system handle, read a clock, log
 //! or panic. A malformed frame is an error return, never an abort.
@@ -41,19 +40,20 @@
 //!
 //! None for frames, universes or merges: they run per frame, up to 44 times
 //! a second per universe, and are measured by the runtime's frame metrics
-//! instead. RDM opens `dmx.rdm.{decode,encode}` and `dmx.rdm.discovery` from
-//! Phase 6b — work a person waits on.
+//! instead. Nor for RDM: the core has no tracer to hand; the runtime's
+//! controller opens `dmx.rdm.discovery` and `dmx.rdm.request`.
 //!
 //! # State
 //!
-//! Phase 5: [`address`], [`start_code`], [`frame`], [`universe`], [`merge`]
-//! with priority, [`error`], [`refresh`] and [`transport`] are built, with
-//! the first fixture corpus under `fixtures/`.
+//! Phase 6b: [`address`], [`start_code`], [`frame`], [`universe`], [`merge`]
+//! with priority, [`error`], [`refresh`], [`transport`] and [`rdm`] are
+//! built, with the frame and RDM corpora under `fixtures/`.
 
 pub mod address;
 pub mod error;
 pub mod frame;
 pub mod merge;
+pub mod rdm;
 pub mod refresh;
 pub mod start_code;
 pub mod transport;

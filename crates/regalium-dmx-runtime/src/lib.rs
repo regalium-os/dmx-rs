@@ -46,9 +46,10 @@
 //!
 //! # State
 //!
-//! Phase 4: [`Output`] and [`Input`] over any transport, on [`SystemClock`]
+//! Phase 6b: [`Output`] and [`Input`] over any transport, on [`SystemClock`]
 //! or [`ManualClock`]; [`Levels`] and [`Merged`] handles; send and receive
-//! failure, sources found and sources lost as [`Event`]s.
+//! failure, sources found and sources lost as [`Event`]s; and the RDM
+//! [`rdm::Controller`] over any RDM line.
 
 mod builder;
 mod clock;
@@ -57,6 +58,7 @@ mod input;
 mod levels;
 mod output;
 mod pump;
+pub mod rdm;
 mod running;
 
 pub use builder::OutputBuilder;

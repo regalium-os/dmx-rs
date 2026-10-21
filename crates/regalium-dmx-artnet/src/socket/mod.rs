@@ -19,6 +19,9 @@
 //!
 //! # Not yet
 //!
+//! RDM through the node: [`RdmLine`](regalium_dmx_core::transport::RdmLine)
+//! asks for the node's table and sends `ArtRdm` (see [`rdm`]).
+//!
 //! Every universe goes to the one target, broadcast or unicast. Art-Net 4
 //! prefers unicast to each node subscribed to the universe, routed by the
 //! discovered nodes' output ports; that arrives with the simulator's rig.
@@ -26,11 +29,13 @@
 mod builder;
 mod error;
 mod nodes;
+mod rdm;
 mod receive;
 
 pub use builder::Builder;
 pub use error::Error;
 pub use nodes::{MAX_NODES, Node};
+pub use rdm::{RDM_WINDOW, TOD_WINDOW};
 
 use crate::codec::{ArtDmx, ArtPoll, PortAddress};
 use crate::sequence;
@@ -38,10 +43,11 @@ use nodes::Nodes;
 use regalium_dmx_core::address::SLOTS;
 use regalium_dmx_core::frame::Frame;
 use regalium_dmx_core::merge::SourceId;
+use regalium_dmx_core::rdm::Uid;
 use regalium_dmx_core::refresh::Refresh;
 use regalium_dmx_core::transport::{Received, Transport};
 use regalium_dmx_telemetry::Meter;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap, VecDeque};
 use std::net::{SocketAddr, UdpSocket};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
@@ -58,6 +64,12 @@ struct State {
     /// The last sequence number received, per source and Port-Address.
     heard: HashMap<(SourceId, u16), u8>,
     nodes: Nodes,
+    /// `ArtRdm` replies, as datagrams, for whichever exchange waits on them.
+    inbox: VecDeque<Vec<u8>>,
+    /// Each port's table of RDM devices, as nodes reported it.
+    tod: HashMap<u16, BTreeSet<Uid>>,
+    /// Levels read during an RDM exchange, for the next receive.
+    levels: VecDeque<(Received, Vec<u8>)>,
 }
 
 /// An Art-Net 4 socket. See the module documentation for what it does
@@ -154,6 +166,12 @@ impl Transport for ArtNet {
     }
 
     fn receive(&self, buf: &mut [u8], timeout: Duration) -> Result<Option<Received>, Error> {
+        if let Some((got, octets)) = self.state().levels.pop_front() {
+            for (to, from) in buf.iter_mut().zip(&octets) {
+                *to = *from;
+            }
+            return Ok(Some(got));
+        }
         self.receive_within(buf, timeout)
     }
 }

@@ -44,6 +44,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "rdm"
+path = "fuzz_targets/rdm.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "frame"
 path = "fuzz_targets/frame.rs"
 test = false

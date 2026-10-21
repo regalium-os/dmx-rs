@@ -18,6 +18,8 @@ pub enum Error {
     /// A frame that `ArtDmx` cannot carry: only null start code data goes
     /// out as levels, and RDM has its own packets (Phase 6b).
     StartCode(StartCode),
+    /// Something Art-Net does not carry: RDM discovery is the node's.
+    Unsupported(&'static str),
 }
 
 impl fmt::Display for Error {
@@ -26,6 +28,7 @@ impl fmt::Display for Error {
             Self::Io(e) => write!(f, "Art-Net socket: {e}"),
             Self::PortAddress(n) => write!(f, "universe {n} is over Art-Net's 32767"),
             Self::StartCode(code) => write!(f, "ArtDmx cannot carry start code {code}"),
+            Self::Unsupported(what) => write!(f, "Art-Net does not carry {what}"),
         }
     }
 }
@@ -34,7 +37,7 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Io(e) => Some(e),
-            Self::PortAddress(_) | Self::StartCode(_) => None,
+            Self::PortAddress(_) | Self::StartCode(_) | Self::Unsupported(_) => None,
         }
     }
 }

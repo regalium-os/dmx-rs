@@ -3,8 +3,8 @@
 
 # Opcodes this crate does not decode yet: kept whole.
 
-# ArtTodRequest (0x8000), until RDM in Phase 6b.
-41 72 74 2d 4e 65 74 00 00 80 00 0e 00 00 => opcode 0x8000; body 000e0000
+# ArtFirmwareMaster (0xf200): firmware upload, which this driver never sends.
+41 72 74 2d 4e 65 74 00 00 f2 00 0e 00 00 => opcode 0xf200; body 000e0000
 
 # A header alone: an unknown opcode with no body.
 41 72 74 2d 4e 65 74 00 34 12 => opcode 0x1234; no body
