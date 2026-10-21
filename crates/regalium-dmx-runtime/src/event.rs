@@ -1,8 +1,9 @@
 // Copyright 2026 RegaliumOS™.
 // SPDX-License-Identifier: Apache-2.0
 
-//! What the output tells its caller: a transport that started failing, and
-//! one that recovered.
+//! What an output or an input tells its caller: a transport that started
+//! failing and one that recovered; a merge source that appeared, and one
+//! that fell silent.
 //!
 //! Edge-triggered: a dead port is reported once when it dies and once when
 //! it comes back, never 44 times a second. Delivered through a bounded queue
@@ -10,6 +11,7 @@
 //! dropped and counted ([`crate::Output::dropped_events`]), because a refresh
 //! that waits for a log reader is a refresh that flickers.
 
+use regalium_dmx_core::merge::SourceId;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{Receiver, SyncSender, TrySendError};
 use std::time::Duration;
@@ -17,8 +19,8 @@ use std::time::Duration;
 /// Events held for a slow reader before new ones are dropped.
 pub const EVENT_QUEUE: usize = 64;
 
-/// Something the caller may want to act on. Non-exhaustive: sources lost and
-/// RDM devices found arrive with later phases.
+/// Something the caller may want to act on. Non-exhaustive: RDM devices
+/// found arrive with Phase 6b.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Event {
@@ -38,6 +40,39 @@ pub enum Event {
         protocol: &'static str,
         /// The universe, as the protocol numbers it.
         universe: u32,
+    },
+    /// Receiving failed, and keeps failing until
+    /// [`Event::ReceiveRecovered`]. The input retries every
+    /// [`RETRY`](crate::RETRY).
+    ReceiveFailed {
+        /// The transport's protocol.
+        protocol: &'static str,
+        /// The transport's error, as it described it.
+        error: String,
+    },
+    /// Receiving works again.
+    ReceiveRecovered {
+        /// The transport's protocol.
+        protocol: &'static str,
+    },
+    /// A new source joined `universe`'s merge.
+    SourceFound {
+        /// The transport's protocol.
+        protocol: &'static str,
+        /// The universe, as the protocol numbers it.
+        universe: u32,
+        /// The source, as the transport identifies it.
+        source: SourceId,
+    },
+    /// A source was silent for the transport's source timeout and left the
+    /// merge. When it was the last, the universe goes dark.
+    SourceLost {
+        /// The transport's protocol.
+        protocol: &'static str,
+        /// The universe, as the protocol numbers it.
+        universe: u32,
+        /// The source, as the transport identified it.
+        source: SourceId,
     },
 }
 

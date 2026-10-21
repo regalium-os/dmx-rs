@@ -29,15 +29,15 @@ Art-Net, sACN and RDM dissectors as the second opinion where we do not.
 | 1 | the telemetry seam and its OTel adapter, ported from bacnet-rs; DMX's keys, instruments and series shapes | `telemetry`, `telemetry-otel` | **built** |
 | 2 | DMX512 frames, universes, HTP/LTP merge; first corpus | `core` | **built** |
 | 3 | refresh loops on an injected clock; the transport trait; events | `core`, `runtime` | **built** |
-| 4 | Art-Net 4: ArtDmx, ArtPoll/Reply, ArtSync, ArtAddress; first live output; the receive and merge loop | `artnet`, `runtime` | next |
-| 5 | sACN: data, sync, universe discovery, priority, source loss | `sacn` | |
+| 4 | Art-Net 4: ArtDmx, ArtPoll/Reply, ArtSync, ArtAddress; first live output; the receive and merge loop | `artnet`, `runtime` | **built** |
+| 5 | sACN: data, sync, universe discovery, priority, source loss | `sacn` | next |
 | 6 | the physical line: ENTTEC DMX USB Pro, RS-485 break generation; port auto-discovery | `serial` | |
 | 6b | RDM: codec, discovery, GET/SET, over serial, Art-Net and sACN (E1.33 later) | `core`, transports | |
 | 7 | **the schema tree** — designed together, see below | `schema`, `protobuf/` | to discuss |
 | 8 | the field probe: TUI and CLI | `dmx-probe` | |
 | 9 | the server: gRPC, REST, MCP generated from the schema | `dmx-server` | |
 | — | the rig simulator, growing with each transport | `dmx-sim` | alongside 4–6b |
-| — | fuzz targets for every decoder | `fuzz/` | `frame` **built**; one per codec after |
+| — | fuzz targets for every decoder | `fuzz/` | `frame`, `artnet` **built**; one per codec after |
 | — | Grafana dashboard and observability stack, as `telemetry.just` | `tools/` | after 8 |
 
 RDM is 6b rather than 2 on purpose: it is the hardest part of the protocol
@@ -100,7 +100,7 @@ The adapter pins the same SDK commit as bacnet-rs, so both export alike.
 - Alternate start codes are never applied or merged as levels.
 - No spans: all of this runs per frame (see the seam's contract).
 - Corpus `fixtures/frame/`: null, alternate and malformed packets, built
-  from the standard. Captured traffic arrives with Art-Net in Phase 4.
+  from the standard.
 
 ## Phase 3, in detail
 
@@ -121,6 +121,31 @@ The adapter pins the same SDK commit as bacnet-rs, so both export alike.
 - Every send records `dmx.frames`, `dmx.frame.interval`, packets and slots.
 - Receiving and merging are deferred to Phase 4, where a real receiver
   exercises them.
+
+## Phase 4, in detail
+
+- **The codec** (`artnet::codec`): `ArtDmx`, `ArtPoll`, `ArtPollReply`,
+  `ArtSync`, `ArtAddress`, borrowing and lossless; an unknown opcode decodes
+  as `Other` with its body. A short `ArtPollReply` from older equipment
+  decodes, its missing fields zero. `ArtDmx` carries the core's frame.
+- **The sequence rule**: a packet a little behind the last from the same
+  source and universe is dropped and counted; one far behind is a restart.
+  The window is E1.31's, since Art-Net specifies none.
+- **The socket** (`artnet::ArtNet`) satisfies the transport trait: it sends
+  to one target, pads odd lengths as Art-Net 4 requires, answers untargeted
+  polls as a portless controller, and records replies in a bounded node
+  table. Sending and receiving share one socket through an `Arc`.
+- **The input** (`runtime::Input`): receive, merge per listened universe,
+  and drop a source silent for the transport's source timeout (Art-Net's
+  10 s by default), with found, lost, failed and recovered as events.
+- **First live output**: two consoles on output threads, merged HTP by an
+  input thread, over real UDP on loopback.
+- Corpus `fixtures/` in the Art-Net crate: every packet, unknown opcodes and
+  malformed datagrams, **built from the specification's layout, not yet
+  captured**. A Wireshark capture from real nodes is the second opinion
+  still owed, together with the spec's exact keep-alive figure (1 s is used).
+- **Not yet**: unicast routing to the nodes subscribed to a universe,
+  sending `ArtSync` after a batch, and `ArtRdm`/`ArtTodData` (Phase 6b).
 
 ## Phase 7: the schema, to discuss
 

@@ -1,0 +1,10 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# ArtSync (OpSync, 0x5200): output now.
+
+# As a conforming sender sends it.
+41 72 74 2d 4e 65 74 00 00 52 00 0e 00 00 => sync v14 aux 0000
+
+# Nonzero aux octets: kept.
+41 72 74 2d 4e 65 74 00 00 52 00 0e 01 02 ff => sync v14 aux 0102

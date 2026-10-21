@@ -46,21 +46,23 @@
 //!
 //! # State
 //!
-//! Phase 3: [`Output`] over any transport, on [`SystemClock`] or
-//! [`ManualClock`]; [`Levels`] handles; send failure and recovery as
-//! [`Event`]s. Receiving, merging and source loss arrive with Phase 4.
+//! Phase 4: [`Output`] and [`Input`] over any transport, on [`SystemClock`]
+//! or [`ManualClock`]; [`Levels`] and [`Merged`] handles; send and receive
+//! failure, sources found and sources lost as [`Event`]s.
 
 mod builder;
 mod clock;
 mod event;
+mod input;
 mod levels;
 mod output;
 mod pump;
 mod running;
 
-pub use builder::Builder;
+pub use builder::OutputBuilder;
 pub use clock::{Clock, ManualClock, SystemClock, Wake};
 pub use event::{EVENT_QUEUE, Event, Events};
+pub use input::{Input, InputBuilder, MAX_WAIT, Merged, RETRY};
 pub use levels::Levels;
 pub use output::{MIN_INTERVAL, Output};
 pub use running::Running;

@@ -79,8 +79,17 @@ checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 name = "regalium-dmx"
 version = "0.1.0"
 dependencies = [
+ "regalium-dmx-artnet",
  "regalium-dmx-core",
  "regalium-dmx-runtime",
+]
+
+[[package]]
+name = "regalium-dmx-artnet"
+version = "0.1.0"
+dependencies = [
+ "regalium-dmx-core",
+ "regalium-dmx-telemetry",
 ]
 
 [[package]]
@@ -103,6 +112,7 @@ name = "regalium-dmx-runtime"
 version = "0.1.0"
 dependencies = [
  "regalium-dmx-core",
+ "regalium-dmx-telemetry",
 ]
 
 [[package]]

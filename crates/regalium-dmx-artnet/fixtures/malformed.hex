@@ -1,0 +1,38 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# Datagrams that are not Art-Net, or end too soon. `error <kind> at
+# <offset>`, the offset counting from the start of the datagram.
+
+# Nothing.
+ => error not-artnet at 0
+
+# Another protocol: an sACN preamble.
+00 10 00 00 41 53 43 00 => error not-artnet at 0
+
+# The ID with a lower-case letter.
+41 72 74 2d 6e 65 74 00 00 50 => error not-artnet at 0
+
+# The ID and half an opcode.
+41 72 74 2d 4e 65 74 00 00 => error truncated need 10 at 9
+
+# ArtDmx without its length.
+41 72 74 2d 4e 65 74 00 00 50 00 0e 01 00 00 00 => error truncated need 18 at 16
+
+# ArtDmx claiming 513 slots.
+41 72 74 2d 4e 65 74 00 00 50 00 0e 00 00 00 00 02 01 00 00 => error too-long 513 slots at 16
+
+# ArtDmx claiming 4 slots, carrying 2.
+41 72 74 2d 4e 65 74 00 00 50 00 0e 00 00 00 00 00 04 01 02 => error truncated need 22 at 20
+
+# ArtPoll without its diagnostics priority.
+41 72 74 2d 4e 65 74 00 00 20 00 0e 00 => error truncated need 14 at 13
+
+# ArtPollReply without its port.
+41 72 74 2d 4e 65 74 00 00 21 0a 00 00 01 36 => error truncated need 16 at 15
+
+# ArtSync without its aux octets.
+41 72 74 2d 4e 65 74 00 00 52 00 0e => error truncated need 14 at 12
+
+# ArtAddress cut off in its long name.
+41 72 74 2d 4e 65 74 00 00 60 00 0e 7f 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 => error truncated need 107 at 44

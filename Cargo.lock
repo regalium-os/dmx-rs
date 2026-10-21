@@ -1374,6 +1374,7 @@ dependencies = [
 name = "regalium-dmx"
 version = "0.1.0"
 dependencies = [
+ "regalium-dmx-artnet",
  "regalium-dmx-core",
  "regalium-dmx-runtime",
 ]
@@ -1383,6 +1384,7 @@ name = "regalium-dmx-artnet"
 version = "0.1.0"
 dependencies = [
  "regalium-dmx-core",
+ "regalium-dmx-telemetry",
 ]
 
 [[package]]
@@ -1405,6 +1407,7 @@ dependencies = [
 name = "regalium-dmx-runtime"
 version = "0.1.0"
 dependencies = [
+ "regalium-dmx-artnet",
  "regalium-dmx-core",
  "regalium-dmx-telemetry",
 ]

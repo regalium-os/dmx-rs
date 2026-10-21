@@ -57,9 +57,11 @@ impl<'a> Frame<'a> {
     }
 
     /// A frame of `slots` the caller already holds to 512 or fewer, as a
-    /// universe does by construction. Longer input is cut at 512 rather than
-    /// trusted, so the invariant holds even if the caller is wrong.
-    pub(crate) fn within_limit(start_code: StartCode, slots: &'a [u8]) -> Self {
+    /// universe or an `ArtDmx` does by construction. Longer input is cut at
+    /// 512 rather than trusted, so the invariant holds even if the caller is
+    /// wrong; use [`Frame::new`] where that would be a bug worth reporting.
+    #[must_use]
+    pub fn within_limit(start_code: StartCode, slots: &'a [u8]) -> Self {
         Self {
             start_code,
             slots: slots.get(..SLOTS).unwrap_or(slots),

@@ -12,6 +12,7 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
+regalium-dmx-artnet.workspace = true
 regalium-dmx-core.workspace = true
 regalium-dmx-runtime.workspace = true
 

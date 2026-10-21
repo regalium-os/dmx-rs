@@ -1,0 +1,19 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# ArtPoll (OpPoll, 0x2000): discovery.
+
+# The minimum: version, flags, diagnostics priority.
+41 72 74 2d 4e 65 74 00 00 20 00 0e 00 00 => poll v14 flags 0x00 diag 0x00 for everyone
+
+# Reply on change, send diagnostics at DpLow.
+41 72 74 2d 4e 65 74 00 00 20 00 0e 06 10 => poll v14 flags 0x06 diag 0x10 for everyone
+
+# Art-Net 4 targeted: top 0x0010, bottom 0x0001, ESTA and OEM codes.
+41 72 74 2d 4e 65 74 00 00 20 00 0e 20 00 00 10 00 01 12 34 56 78 => poll v14 flags 0x20 diag 0x00 for 0:0:1..=0:1:0
+
+# The extension without the targeted flag: not targeted.
+41 72 74 2d 4e 65 74 00 00 20 00 0e 00 00 00 10 00 01 00 00 00 00 => poll v14 flags 0x00 diag 0x00 for everyone
+
+# Targeted, but too short to say what for: everyone.
+41 72 74 2d 4e 65 74 00 00 20 00 0e 20 00 00 => poll v14 flags 0x20 diag 0x00 for everyone

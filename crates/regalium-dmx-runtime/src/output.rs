@@ -11,7 +11,7 @@
 //! drop. Close is
 //! idempotent and safe from any thread.
 
-use crate::builder::Builder;
+use crate::builder::OutputBuilder;
 use crate::clock::{Clock, Wake, lock};
 use crate::event::Sink;
 use crate::levels::{Levels, Slot};
@@ -58,8 +58,8 @@ impl<T, C> Clone for Output<T, C> {
 
 impl<T: Transport, C: Clock> Output<T, C> {
     /// Starts configuring an output over `transport`, timed by `clock`.
-    pub fn builder(transport: T, clock: C) -> Builder<T, C> {
-        Builder {
+    pub fn builder(transport: T, clock: C) -> OutputBuilder<T, C> {
+        OutputBuilder {
             transport,
             clock,
             meter: Arc::new(NoopMeter),

@@ -1,7 +1,8 @@
 // Copyright 2026 RegaliumOS™.
 // SPDX-License-Identifier: Apache-2.0
 
-//! An output on a thread of its own, and the handle that stops and joins it.
+//! An output or an input on a thread of its own, and the handle that stops
+//! and joins it.
 
 use crate::clock::Clock;
 use crate::output::Output;
@@ -24,14 +25,11 @@ where
             .name(format!("dmx-output-{}", self.inner.transport.protocol()))
             .spawn(move || output.run())?;
         let output = self.clone();
-        Ok(Running {
-            close: Box::new(move || output.close()),
-            thread: Some(thread),
-        })
+        Ok(Running::new(Box::new(move || output.close()), thread))
     }
 }
 
-/// An output running on its own thread. Closing, or dropping, stops the
+/// An output or input running on its own thread. Closing, or dropping, stops the
 /// loop and joins the thread; no orphan outlives it.
 pub struct Running {
     close: Box<dyn Fn() + Send + Sync>,
@@ -39,6 +37,13 @@ pub struct Running {
 }
 
 impl Running {
+    pub(crate) fn new(close: Box<dyn Fn() + Send + Sync>, thread: JoinHandle<()>) -> Self {
+        Self {
+            close,
+            thread: Some(thread),
+        }
+    }
+
     /// Stops the loop and waits for its thread. Idempotent.
     pub fn close(&mut self) {
         (self.close)();

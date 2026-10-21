@@ -23,6 +23,13 @@ libfuzzer-sys = "0.4"
 regalium-dmx = { path = "../crates/regalium-dmx" }
 
 [[bin]]
+name = "artnet"
+path = "fuzz_targets/artnet.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "frame"
 path = "fuzz_targets/frame.rs"
 test = false

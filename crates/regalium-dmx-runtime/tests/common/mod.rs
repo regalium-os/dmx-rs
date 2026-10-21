@@ -8,6 +8,8 @@
 //! A transport that remembers what it was asked to send, and when, by the
 //! same manual clock the output runs on; and a switch to make it fail.
 
+pub(crate) mod script;
+
 use regalium_dmx_core::frame::Frame;
 use regalium_dmx_core::refresh::Refresh;
 use regalium_dmx_core::transport::{Received, Transport};

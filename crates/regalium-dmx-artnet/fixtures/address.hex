@@ -1,0 +1,11 @@
+# Copyright 2026 RegaliumOS™.
+# SPDX-License-Identifier: Apache-2.0
+
+# ArtAddress (OpAddress, 0x6000): reconfigure a node. 0x7f leaves a
+# switch alone; bit 7 set programs it.
+
+# Rename only; every switch left alone.
+41 72 74 2d 4e 65 74 00 00 60 00 0e 7f 01 54 72 75 73 73 20 31 00 00 00 00 00 00 00 00 00 00 00 55 70 73 74 61 67 65 20 74 72 75 73 73 20 64 69 6d 6d 65 72 73 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 7f 7f 7f 7f 7f 7f 7f 7f 7f ff 00 => address v14 net 0x7f sub 0x7f bind 1 "Truss 1" "Upstage truss dimmers" out [127, 127, 127, 127] command 0x00
+
+# Move output port 1 to 2:3:4 and cancel merge (command 0x01).
+41 72 74 2d 4e 65 74 00 00 60 00 0e 82 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 7f 7f 7f 7f 84 7f 7f 7f 83 ff 01 => address v14 net 0x82 sub 0x83 bind 1 "" "" out [132, 127, 127, 127] command 0x01

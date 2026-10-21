@@ -16,9 +16,10 @@
 //!
 //! # State
 //!
-//! Phase 3: the core's frames, universes, merging, refresh policy and
-//! transport trait, and the runtime's outputs, re-exported.
+//! Phase 4: the core's frames, universes, merging, refresh policy and
+//! transport trait; the runtime's outputs and inputs; and Art-Net 4.
 
+pub use regalium_dmx_artnet as artnet;
 pub use regalium_dmx_core::{
     address, error, frame, merge, refresh, start_code, transport, universe,
 };

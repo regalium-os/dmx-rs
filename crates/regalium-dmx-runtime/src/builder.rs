@@ -15,14 +15,14 @@ use std::sync::{Arc, Mutex};
 
 /// Options for an [`Output`]. Required arguments are positional on
 /// [`Output::builder`]; everything here is optional.
-pub struct Builder<T, C> {
+pub struct OutputBuilder<T, C> {
     pub(crate) transport: T,
     pub(crate) clock: C,
     pub(crate) meter: Arc<dyn Meter>,
     pub(crate) logger: Arc<dyn Logger>,
 }
 
-impl<T: Transport, C: Clock> Builder<T, C> {
+impl<T: Transport, C: Clock> OutputBuilder<T, C> {
     /// Records frames, intervals and packets into `meter`.
     #[must_use]
     pub fn meter(mut self, meter: Arc<dyn Meter>) -> Self {

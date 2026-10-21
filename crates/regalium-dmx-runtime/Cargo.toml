@@ -18,5 +18,9 @@ authors.workspace = true
 regalium-dmx-core.workspace = true
 regalium-dmx-telemetry.workspace = true
 
+# The live tests drive a real transport end to end on loopback.
+[dev-dependencies]
+regalium-dmx-artnet.workspace = true
+
 [lints]
 workspace = true
